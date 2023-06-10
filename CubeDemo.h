@@ -48,7 +48,9 @@ protected:
 	virtual void OnKeyReleased(KeyEventArgs& args) override;
 	virtual void OnMouseWheel(MouseWheelEventArgs& args) override;
 	virtual void OnResize(ResizeEventArgs& args) override;
-	//Microsoft::WRL::ComPtr
+	virtual void OnMouseMoved(MouseMotionEventArgs& args) override;
+	virtual void OnMouseButtonPressed(MouseButtonEventArgs& args) override;
+	virtual void OnMouseButtonReleased(MouseButtonEventArgs& args) override;
 private:
 	void TransitionResource(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList2> commandList,
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource,

@@ -17,7 +17,9 @@ using ComPtr = Microsoft::WRL::ComPtr<T>;
 
 using namespace DirectX;
 
-KeyCode::Key cameraArgument{};
+std::vector<KeyCode::Key> cameraKeyArgument{};
+std::pair<int, int> cameraMouseArgument{INT_MIN, INT_MIN};
+std::pair<int, int> startingMousePos{};
 
 struct VertexPosColor
 {
@@ -175,7 +177,7 @@ void CubeDemo::OnUpdate(UpdateEventArgs& args)
     static double totalTime = 0.0;
 
     super::OnUpdate(args);
-    _camera->CheckForInput(cameraArgument, args);
+    _camera->CheckForInput(cameraKeyArgument, cameraMouseArgument, args);
     _camera->Update(args);
     totalTime += args.ElapsedTime;
     frameCount++;
@@ -193,17 +195,17 @@ void CubeDemo::OnUpdate(UpdateEventArgs& args)
         totalTime = 0.0;
     }
 
-    float angle = static_cast<float>(args.TotalTime * 10);
+    float angle = static_cast<float>(args.TotalTime * 0);
     const XMVECTOR rotationAxis = XMVectorSet(0, 1, 1, 0);
     _modelMatrix = XMMatrixRotationAxis(rotationAxis, XMConvertToRadians(angle));
 
-    const XMVECTOR eyePosition{ XMVectorSet(0, 0, -10, 1) };
-    const XMVECTOR focusPoint{ XMVectorSet(0, 0, 0, 1) };
-    const XMVECTOR upDirection{ XMVectorSet(0, 1, 0, 0) };
-    _viewMatrix = XMMatrixLookAtLH(eyePosition, focusPoint, upDirection);
+    //const XMVECTOR eyePosition{ XMVectorSet(0, 0, -10, 1) };
+    //const XMVECTOR focusPoint{ XMVectorSet(0, 0, 0, 1) };
+    //const XMVECTOR upDirection{ XMVectorSet(0, 1, 0, 0) };
+    //_viewMatrix = XMMatrixLookAtLH(eyePosition, focusPoint, upDirection);
 
-    float aspectRatio = 1280 / static_cast<float>(720);
-    _projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(_fieldOfView), aspectRatio, 0.1f, 100.0f);
+    //float aspectRatio = 1280 / static_cast<float>(720);
+    //_projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(_fieldOfView), aspectRatio, 0.1f, 100.0f);
 }
 
 void CubeDemo::OnRender(RenderEventArgs& args)
@@ -237,13 +239,14 @@ void CubeDemo::OnRender(RenderEventArgs& args)
     commandList->OMSetRenderTargets(1, &rtv, false, &dsv);
 
     //XMMATRIX mvpMatrix = XMMatrixMultiply(_modelMatrix, _viewMatrix);
-    auto a = _projectionMatrix;
-    auto b = _camera->ViewProjectionMatrix();
-    auto c = _viewMatrix;
-    auto d = XMMatrixMultiply(_viewMatrix, _projectionMatrix);
     XMMATRIX mvpMatrix = XMMatrixMultiply(_modelMatrix, _camera->ViewProjectionMatrix()); //_projectionMatrix
     //mvpMatrix = XMMatrixMultiply(mvpMatrix, _projectionMatrix); //_projectionMatrix
     commandList->SetGraphicsRoot32BitConstants(0, sizeof(XMMATRIX) / 4, &mvpMatrix, 0);
+
+    commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);
+
+    XMMATRIX secondary = mvpMatrix * 2;
+    commandList->SetGraphicsRoot32BitConstants(0, sizeof(XMMATRIX) / 4, &secondary, 0);
 
     commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);
 
@@ -262,6 +265,7 @@ void CubeDemo::OnRender(RenderEventArgs& args)
 void CubeDemo::OnKeyPressed(KeyEventArgs& args)
 {
     super::OnKeyPressed(args);
+    auto it = std::find(cameraKeyArgument.begin(), cameraKeyArgument.end(), args.Key);
     switch (args.Key)
     {
     case KeyCode::Escape:
@@ -281,7 +285,12 @@ void CubeDemo::OnKeyPressed(KeyEventArgs& args)
     case KeyCode::A:
     case KeyCode::S:
     case KeyCode::D:
-        cameraArgument = args.Key;
+    case KeyCode::Q:
+    case KeyCode::E:
+        if (it == std::end(cameraKeyArgument))
+        {
+            cameraKeyArgument.emplace_back(args.Key);
+        }
         break;
     default:
         break;
@@ -290,9 +299,10 @@ void CubeDemo::OnKeyPressed(KeyEventArgs& args)
 
 void CubeDemo::OnKeyReleased(KeyEventArgs& args)
 {
-    if (args.Key == cameraArgument)
+    auto it = std::find(cameraKeyArgument.begin(), cameraKeyArgument.end(), args.Key);
+    if (it != std::end(cameraKeyArgument))
     {
-        cameraArgument = KeyCode::None;
+        cameraKeyArgument.erase(it);
     }
 }
 
@@ -383,6 +393,44 @@ void CubeDemo::OnResize(ResizeEventArgs& args)
         _viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(args.Width), static_cast<float>(args.Width));
 
         ResizeDepthBuffer(args.Width, args.Height);
+    }
+}
+
+void CubeDemo::OnMouseMoved(MouseMotionEventArgs& args)
+{
+    if (_camera->IsAcceptingMouseMovementInputs())
+    {
+        cameraMouseArgument.first = args.X - startingMousePos.first;
+        cameraMouseArgument.second = args.Y - startingMousePos.second;
+
+        char buffer[512];
+        sprintf_s(buffer, "XDIFF: %d\n", args.X - startingMousePos.first);
+        OutputDebugStringA(buffer);
+
+        char buffer2[512];
+        sprintf_s(buffer2, "YDIFF: %d\n", args.Y - startingMousePos.second);
+        OutputDebugStringA(buffer2);
+        startingMousePos = { args.X, args.Y };
+    }
+}
+
+void CubeDemo::OnMouseButtonPressed(MouseButtonEventArgs& args)
+{
+    if (args.LeftButton)
+    {
+        SetCapture(_window->GetWindowHandle());
+        _camera->SetIsAcceptingMouseMovementInputs(true);
+        startingMousePos.first = args.X;
+        startingMousePos.second = args.Y;
+    }
+}
+
+void CubeDemo::OnMouseButtonReleased(MouseButtonEventArgs& args)
+{
+    if (!args.LeftButton)
+    {
+        _camera->SetIsAcceptingMouseMovementInputs(false);
+        ReleaseCapture();
     }
 }
 

@@ -25,17 +25,21 @@ public:
 
 	virtual void Initialize() override;
 	virtual void Update(UpdateEventArgs& args) override;
-	void CheckForInput(KeyCode::Key key, UpdateEventArgs& args);
+	void CheckForInput(std::vector<KeyCode::Key>& keys, std::pair<int, int> mouse, UpdateEventArgs& args);
 
-	inline static const float DefaultMouseSensitivity{ 0.1f };
+	inline static const float DefaultMouseSensitivity{ 0.8f };
 	inline static const float DefaultRotationRate{ DirectX::XMConvertToRadians(100.0f) };
 	inline static const float DefaultMovementRate{ 100.0f };
-	void UpdatePosition(const DirectX::XMFLOAT2& movementAmount, const DirectX::XMFLOAT2& rotationAmount, UpdateEventArgs& args);
+	void UpdatePosition(const DirectX::XMFLOAT3& movementAmount, const DirectX::XMFLOAT2& rotationAmount, UpdateEventArgs& args);
+	inline bool IsAcceptingMouseMovementInputs() { return _acceptingMouseMovementInputs; };
+	inline void SetIsAcceptingMouseMovementInputs(bool state) { _acceptingMouseMovementInputs = state; }
 
 private:
 	inline void InvokePositionUpdatedCallbacks();
-
+	std::pair<int, int> prevPair;
+	bool _entered{ false };
 protected:
+	bool _acceptingMouseMovementInputs{ false };
 	float _mouseSensitivity{ DefaultMouseSensitivity };
 	float _rotationRate{ DefaultRotationRate };
 	float _movementRate{ DefaultMovementRate };

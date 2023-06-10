@@ -68,32 +68,60 @@ void FirstPersonCamera::Update(UpdateEventArgs& args)
     Camera::Update(args);
 }
 
-void FirstPersonCamera::CheckForInput(KeyCode::Key key, UpdateEventArgs& args)
+void FirstPersonCamera::CheckForInput(std::vector<KeyCode::Key>& keys, std::pair<int, int> mouse, UpdateEventArgs& args)
 {
-    XMFLOAT2 movementAmount = Vector2Helper::Zero;
+    XMFLOAT3 movementAmount = Vector3Helper::Zero;
     XMFLOAT2 rotationAmount = Vector2Helper::Zero;
     bool positionChanged{ false };
 
-    switch (key)
+
+    for (auto& key : keys)
     {
-    case KeyCode::W:
-        movementAmount.y = -1.0f;
-        positionChanged = true;
-        break;
-    case KeyCode::A:
-        movementAmount.x = 1.0f;
-        positionChanged = true;
-        break;
-    case KeyCode::S:
-        movementAmount.y = 1.0f;
-        positionChanged = true;
-        break;
-    case KeyCode::D:
-        movementAmount.x = -1.0f;
-        positionChanged = true;
-        break;
-    default:
-        break;
+        switch (key)
+        {
+        case KeyCode::W:
+            movementAmount.y = -1.0f;
+            positionChanged = true;
+            break;
+        case KeyCode::A:
+            movementAmount.x = 1.0f;
+            positionChanged = true;
+            break;
+        case KeyCode::S:
+            movementAmount.y = 1.0f;
+            positionChanged = true;
+            break;
+        case KeyCode::D:
+            movementAmount.x = -1.0f;
+            positionChanged = true;
+            break;
+        case KeyCode::E:
+            movementAmount.z = 1.0f;
+            positionChanged = true;
+            break;
+        case KeyCode::Q:
+            movementAmount.z = -1.0f;
+            positionChanged = true;
+            break;
+        default:
+            break;
+        }
+    }
+
+    if (_acceptingMouseMovementInputs)
+    {
+        if (!_entered)
+        {
+            prevPair = mouse;
+            _entered = true;
+        }
+        else if (prevPair != mouse)
+        {
+            rotationAmount.x = -mouse.first * _mouseSensitivity;
+            rotationAmount.y = mouse.second * _mouseSensitivity;
+            positionChanged = true;
+            prevPair = mouse;
+        }
     }
 
     if (positionChanged)
@@ -102,11 +130,12 @@ void FirstPersonCamera::CheckForInput(KeyCode::Key key, UpdateEventArgs& args)
     }
 }
 
-void FirstPersonCamera::UpdatePosition(const DirectX::XMFLOAT2& movementAmount, const DirectX::XMFLOAT2& rotationAmount, UpdateEventArgs& args)
+void FirstPersonCamera::UpdatePosition(const DirectX::XMFLOAT3& movementAmount, const DirectX::XMFLOAT2& rotationAmount, UpdateEventArgs& args)
 {
     float elapsedTime = args.ElapsedTime;
     XMVECTOR rotationVector = XMLoadFloat2(&rotationAmount) * _rotationRate * elapsedTime;
     XMVECTOR right = XMLoadFloat3(&_right);
+    XMVECTOR up = XMLoadFloat3(&_up);
 
     XMMATRIX pitchMatrix = XMMatrixRotationAxis(right, XMVectorGetY(rotationVector));
     XMMATRIX yawMatrix = XMMatrixRotationY(XMVectorGetX(rotationVector));
@@ -114,13 +143,16 @@ void FirstPersonCamera::UpdatePosition(const DirectX::XMFLOAT2& movementAmount, 
     ApplyRotation(XMMatrixMultiply(pitchMatrix, yawMatrix));
 
     XMVECTOR position = XMLoadFloat3(&_position);
-    XMVECTOR movement = XMLoadFloat2(&movementAmount) * _movementRate * elapsedTime;
+    XMVECTOR movement = XMLoadFloat3(&movementAmount) * _movementRate * elapsedTime;
 
     XMVECTOR strafe = right * XMVectorGetX(movement);
     position += strafe;
 
     XMVECTOR forward = XMLoadFloat3(&_direction) * XMVectorGetY(movement);
     position += forward;
+
+    XMVECTOR lift = up * XMVectorGetZ(movement);
+    position += lift;
 
     XMStoreFloat3(&_position, position);
 
