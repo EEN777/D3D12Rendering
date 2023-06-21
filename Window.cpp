@@ -4,9 +4,6 @@
 #include "Window.h"
 #include "Game.h"
 
-template <typename T>
-using ComPtr = Microsoft::WRL::ComPtr<T>;
-
 Window::Window(HWND hWnd, const std::wstring& windowName, int clientWidth, int clientHeight, bool vSync)
     : m_hWnd(hWnd)
     , m_WindowName(windowName)
@@ -259,8 +256,8 @@ void Window::OnResize(ResizeEventArgs& e)
         }
 
         DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-        ThrowIfFailed(m_dxgiSwapChain->GetDesc(&swapChainDesc));
-        ThrowIfFailed(m_dxgiSwapChain->ResizeBuffers(BufferCount, m_ClientWidth,
+        ThrowIfFailedI(m_dxgiSwapChain->GetDesc(&swapChainDesc));
+        ThrowIfFailedI(m_dxgiSwapChain->ResizeBuffers(BufferCount, m_ClientWidth,
             m_ClientHeight, swapChainDesc.BufferDesc.Format, swapChainDesc.Flags));
 
         m_CurrentBackBufferIndex = m_dxgiSwapChain->GetCurrentBackBufferIndex();
@@ -285,7 +282,7 @@ Microsoft::WRL::ComPtr<IDXGISwapChain4> Window::CreateSwapChain()
     createFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
 #endif
 
-    ThrowIfFailed(CreateDXGIFactory2(createFactoryFlags, IID_PPV_ARGS(&dxgiFactory4)));
+    ThrowIfFailedI(CreateDXGIFactory2(createFactoryFlags, IID_PPV_ARGS(&dxgiFactory4)));
 
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
     swapChainDesc.Width = m_ClientWidth;
@@ -303,7 +300,7 @@ Microsoft::WRL::ComPtr<IDXGISwapChain4> Window::CreateSwapChain()
     ID3D12CommandQueue* pCommandQueue = app.GetCommandQueue()->GetD3D12CommandQueue().Get();
 
     ComPtr<IDXGISwapChain1> swapChain1;
-    ThrowIfFailed(dxgiFactory4->CreateSwapChainForHwnd(
+    ThrowIfFailedI(dxgiFactory4->CreateSwapChainForHwnd(
         pCommandQueue,
         m_hWnd,
         &swapChainDesc,
@@ -313,9 +310,9 @@ Microsoft::WRL::ComPtr<IDXGISwapChain4> Window::CreateSwapChain()
 
     // Disable the Alt+Enter fullscreen toggle feature. Switching to fullscreen
     // will be handled manually.
-    ThrowIfFailed(dxgiFactory4->MakeWindowAssociation(m_hWnd, DXGI_MWA_NO_ALT_ENTER));
+    ThrowIfFailedI(dxgiFactory4->MakeWindowAssociation(m_hWnd, DXGI_MWA_NO_ALT_ENTER));
 
-    ThrowIfFailed(swapChain1.As(&dxgiSwapChain4));
+    ThrowIfFailedI(swapChain1.As(&dxgiSwapChain4));
 
     m_CurrentBackBufferIndex = dxgiSwapChain4->GetCurrentBackBufferIndex();
 
@@ -332,7 +329,7 @@ void Window::UpdateRenderTargetViews()
     for (int i = 0; i < BufferCount; ++i)
     {
         ComPtr<ID3D12Resource> backBuffer;
-        ThrowIfFailed(m_dxgiSwapChain->GetBuffer(i, IID_PPV_ARGS(&backBuffer)));
+        ThrowIfFailedI(m_dxgiSwapChain->GetBuffer(i, IID_PPV_ARGS(&backBuffer)));
 
         device->CreateRenderTargetView(backBuffer.Get(), nullptr, rtvHandle);
 
@@ -362,7 +359,7 @@ UINT Window::Present()
 {
     UINT syncInterval = m_VSync ? 1 : 0;
     UINT presentFlags = m_IsTearingSupported && !m_VSync ? DXGI_PRESENT_ALLOW_TEARING : 0;
-    ThrowIfFailed(m_dxgiSwapChain->Present(syncInterval, presentFlags));
+    ThrowIfFailedI(m_dxgiSwapChain->Present(syncInterval, presentFlags));
     m_CurrentBackBufferIndex = m_dxgiSwapChain->GetCurrentBackBufferIndex();
 
     return m_CurrentBackBufferIndex;

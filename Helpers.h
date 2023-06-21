@@ -3,7 +3,7 @@
 #include <Windows.h>
 #include <exception>
 
-inline void ThrowIfFailed(HRESULT hr)
+inline void ThrowIfFailedI(HRESULT hr)
 {
 	if (FAILED(hr))
 	{

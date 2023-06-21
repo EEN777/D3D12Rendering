@@ -1,10 +1,8 @@
 #include "CommandQueue.h"
 #include "pch.h"
 
-template <typename T>
-using ComPtr = Microsoft::WRL::ComPtr<T>;
 
-CommandQueue::CommandQueue(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE type) :
+CommandQueue::CommandQueue(ComPtr<ID3D12Device5> device, D3D12_COMMAND_LIST_TYPE type) :
 	_fenceValue{ 0 }, _commandListType(type), _d3d12Device{ device }
 {
 	D3D12_COMMAND_QUEUE_DESC desc{};
@@ -13,8 +11,8 @@ CommandQueue::CommandQueue(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE
 	desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 	desc.NodeMask = 0;
 
-	ThrowIfFailed(_d3d12Device->CreateCommandQueue(&desc, IID_PPV_ARGS(&_d3d12CommandQueue)));
-	ThrowIfFailed(_d3d12Device->CreateFence(_fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&_d3d12Fence)));
+	ThrowIfFailedI(_d3d12Device->CreateCommandQueue(&desc, IID_PPV_ARGS(&_d3d12CommandQueue)));
+	ThrowIfFailedI(_d3d12Device->CreateFence(_fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&_d3d12Fence)));
 
 	_fenceEvent = ::CreateEvent(nullptr, false, false, nullptr);
 	assert(_fenceEvent && "Failed to create event handle!");
@@ -23,28 +21,28 @@ CommandQueue::CommandQueue(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE
 ComPtr<ID3D12CommandAllocator> CommandQueue::CreateCommandAllocator()
 {
 	ComPtr<ID3D12CommandAllocator> commandAllocator;
-	ThrowIfFailed(_d3d12Device->CreateCommandAllocator(_commandListType, IID_PPV_ARGS(&commandAllocator)));
+	ThrowIfFailedI(_d3d12Device->CreateCommandAllocator(_commandListType, IID_PPV_ARGS(&commandAllocator)));
 	return commandAllocator;
 }
 
-ComPtr<ID3D12GraphicsCommandList2> CommandQueue::CreateCommandList(ComPtr<ID3D12CommandAllocator> allocator)
+ComPtr<ID3D12GraphicsCommandList4> CommandQueue::CreateCommandList(ComPtr<ID3D12CommandAllocator> allocator)
 {
-	ComPtr<ID3D12GraphicsCommandList2> commandList;
-	ThrowIfFailed(_d3d12Device->CreateCommandList(0, _commandListType, allocator.Get(), nullptr, IID_PPV_ARGS(&commandList)));
+	ComPtr<ID3D12GraphicsCommandList4> commandList;
+	ThrowIfFailedI(_d3d12Device->CreateCommandList(0, _commandListType, allocator.Get(), nullptr, IID_PPV_ARGS(&commandList)));
 	return commandList;
 }
 
-ComPtr<ID3D12GraphicsCommandList2> CommandQueue::GetCommandList()
+ComPtr<ID3D12GraphicsCommandList4> CommandQueue::GetCommandList()
 {
 	ComPtr<ID3D12CommandAllocator> commandAllocator;
-	ComPtr<ID3D12GraphicsCommandList2> commandList;
+	ComPtr<ID3D12GraphicsCommandList4> commandList;
 
 	if (!_commandAllocatorQueue.empty() && IsFenceComplete(_commandAllocatorQueue.front()._fenceValue))
 	{
 		commandAllocator = _commandAllocatorQueue.front()._commandAllocator;
 		_commandAllocatorQueue.pop();
 
-		ThrowIfFailed(commandAllocator->Reset());
+		ThrowIfFailedI(commandAllocator->Reset());
 	}
 	else
 	{
@@ -56,7 +54,7 @@ ComPtr<ID3D12GraphicsCommandList2> CommandQueue::GetCommandList()
 		commandList = _commandListQueue.front();
 		_commandListQueue.pop();
 
-		ThrowIfFailed(commandList->Reset(commandAllocator.Get(), nullptr));
+		ThrowIfFailedI(commandList->Reset(commandAllocator.Get(), nullptr));
 	}
 
 	else
@@ -64,17 +62,17 @@ ComPtr<ID3D12GraphicsCommandList2> CommandQueue::GetCommandList()
 		commandList = CreateCommandList(commandAllocator);
 	}
 
-	ThrowIfFailed(commandList->SetPrivateDataInterface(__uuidof(ID3D12CommandAllocator), commandAllocator.Get()));
+	ThrowIfFailedI(commandList->SetPrivateDataInterface(__uuidof(ID3D12CommandAllocator), commandAllocator.Get()));
 
 	return commandList;
 }
 
-uint64_t CommandQueue::ExecuteCommandList(ComPtr<ID3D12GraphicsCommandList2> commandList)
+uint64_t CommandQueue::ExecuteCommandList(ComPtr<ID3D12GraphicsCommandList4> commandList)
 {
 	commandList->Close();
 	ID3D12CommandAllocator* commandAllocator;
 	UINT dataSize = sizeof(commandAllocator);
-	ThrowIfFailed(commandList->GetPrivateData(__uuidof(ID3D12CommandAllocator), &dataSize, &commandAllocator));
+	ThrowIfFailedI(commandList->GetPrivateData(__uuidof(ID3D12CommandAllocator), &dataSize, &commandAllocator));
 
 	ID3D12CommandList* const commandLists[]
 	{

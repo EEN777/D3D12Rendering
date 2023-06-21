@@ -24,6 +24,27 @@
     <ClCompile Include="PerspectiveCamera.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
+    <ClCompile Include="UploadBuffer.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="DescriptorAllocator.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="nv_helpers_dx12\BottomLevelASGenerator.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="nv_helpers_dx12\RaytracingPipelineGenerator.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="nv_helpers_dx12\RootSignatureGenerator.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="nv_helpers_dx12\ShaderBindingTableGenerator.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="nv_helpers_dx12\TopLevelASGenerator.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Helpers.h" />
@@ -52,6 +73,39 @@
     <ClInclude Include="FirstPersonCamera.h">
       <Filter>Utility</Filter>
     </ClInclude>
+    <ClInclude Include="UploadBuffer.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Defines.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="DescriptorAllocator.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="DescriptorAllocatorPage.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="DXRHelper.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="DXSampleHelper.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="nv_helpers_dx12\BottomLevelASGenerator.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="nv_helpers_dx12\RaytracingPipelineGenerator.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="nv_helpers_dx12\RootSignatureGenerator.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="nv_helpers_dx12\ShaderBindingTableGenerator.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="nv_helpers_dx12\TopLevelASGenerator.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">
@@ -73,5 +127,25 @@
     <None Include="VectorHelper.inl">
       <Filter>Utility</Filter>
     </None>
+    <None Include="dxcompiler.dll">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="dxil.dll">
+      <Filter>Shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="Common.hlsl">
+      <Filter>Shaders</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Hit.hlsl">
+      <Filter>Shaders</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Miss.hlsl">
+      <Filter>Shaders</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="RayGen.hlsl">
+      <Filter>Shaders</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>

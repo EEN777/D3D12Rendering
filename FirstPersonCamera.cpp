@@ -58,6 +58,15 @@ void FirstPersonCamera::UpdateViewMatrix()
     Camera::UpdateViewMatrix();
 }
 
+void FirstPersonCamera::ResetOrientation()
+{
+    _up = Vector3Helper::Up;
+    _right = Vector3Helper::Right;
+    _viewMatrixDataDirty;
+
+    UpdateViewMatrix();
+}
+
 void FirstPersonCamera::Initialize()
 {
     Camera::Initialize();

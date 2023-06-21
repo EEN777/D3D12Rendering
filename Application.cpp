@@ -13,9 +13,6 @@ using WindowPtr = std::shared_ptr<Window>;
 using WindowMap = std::map< HWND, WindowPtr >;
 using WindowNameMap = std::map< std::wstring, WindowPtr >;
 
-template <typename T>
-using ComPtr = Microsoft::WRL::ComPtr<T>;
-
 static Application* gs_pSingelton = nullptr;
 static WindowMap gs_Windows;
 static WindowNameMap gs_WindowByName;
@@ -45,7 +42,7 @@ Application::Application(HINSTANCE hInst)
     // so all possible errors generated while creating DX12 objects
     // are caught by the debug layer.
     ComPtr<ID3D12Debug> debugInterface;
-    ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)));
+    ThrowIfFailedI(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)));
     debugInterface->EnableDebugLayer();
 #endif
 
@@ -121,15 +118,15 @@ Microsoft::WRL::ComPtr<IDXGIAdapter4> Application::GetAdapter(bool bUseWarp)
     createFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
 #endif
 
-    ThrowIfFailed(CreateDXGIFactory2(createFactoryFlags, IID_PPV_ARGS(&dxgiFactory)));
+    ThrowIfFailedI(CreateDXGIFactory2(createFactoryFlags, IID_PPV_ARGS(&dxgiFactory)));
 
     ComPtr<IDXGIAdapter1> dxgiAdapter1;
     ComPtr<IDXGIAdapter4> dxgiAdapter4;
 
     if (bUseWarp)
     {
-        ThrowIfFailed(dxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(&dxgiAdapter1)));
-        ThrowIfFailed(dxgiAdapter1.As(&dxgiAdapter4));
+        ThrowIfFailedI(dxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(&dxgiAdapter1)));
+        ThrowIfFailedI(dxgiAdapter1.As(&dxgiAdapter4));
     }
     else
     {
@@ -148,17 +145,17 @@ Microsoft::WRL::ComPtr<IDXGIAdapter4> Application::GetAdapter(bool bUseWarp)
                 dxgiAdapterDesc1.DedicatedVideoMemory > maxDedicatedVideoMemory)
             {
                 maxDedicatedVideoMemory = dxgiAdapterDesc1.DedicatedVideoMemory;
-                ThrowIfFailed(dxgiAdapter1.As(&dxgiAdapter4));
+                ThrowIfFailedI(dxgiAdapter1.As(&dxgiAdapter4));
             }
         }
     }
 
     return dxgiAdapter4;
 }
-Microsoft::WRL::ComPtr<ID3D12Device2> Application::CreateDevice(Microsoft::WRL::ComPtr<IDXGIAdapter4> adapter)
+Microsoft::WRL::ComPtr<ID3D12Device5> Application::CreateDevice(Microsoft::WRL::ComPtr<IDXGIAdapter4> adapter)
 {
-    ComPtr<ID3D12Device2> d3d12Device2;
-    ThrowIfFailed(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&d3d12Device2)));
+    ComPtr<ID3D12Device5> d3d12Device2;
+    ThrowIfFailedI(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_2, IID_PPV_ARGS(&d3d12Device2)));
     //    NAME_D3D12_OBJECT(d3d12Device2);
 
         // Enable debug messages in debug mode.
@@ -194,7 +191,7 @@ Microsoft::WRL::ComPtr<ID3D12Device2> Application::CreateDevice(Microsoft::WRL::
         NewFilter.DenyList.NumIDs = _countof(DenyIds);
         NewFilter.DenyList.pIDList = DenyIds;
 
-        ThrowIfFailed(pInfoQueue->PushStorageFilter(&NewFilter));
+        ThrowIfFailedI(pInfoQueue->PushStorageFilter(&NewFilter));
     }
 #endif
 
@@ -316,7 +313,7 @@ void Application::Quit(int exitCode)
     PostQuitMessage(exitCode);
 }
 
-Microsoft::WRL::ComPtr<ID3D12Device2> Application::GetDevice() const
+Microsoft::WRL::ComPtr<ID3D12Device5> Application::GetDevice() const
 {
     return m_d3d12Device;
 }
@@ -358,7 +355,7 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> Application::CreateDescriptorHeap(U
     desc.NodeMask = 0;
 
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap;
-    ThrowIfFailed(m_d3d12Device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&descriptorHeap)));
+    ThrowIfFailedI(m_d3d12Device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&descriptorHeap)));
 
     return descriptorHeap;
 }

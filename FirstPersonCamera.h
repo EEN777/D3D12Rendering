@@ -6,6 +6,7 @@
 
 class FirstPersonCamera : public PerspectiveCamera
 {
+	friend class CubeDemo;
 public:
 	FirstPersonCamera(float fieldOfView = DefaultFieldOfView, float aspectRatio = DefaultAspectRatio, float nearPlaneDistance = DefaultNearPlaneDistance, float farPlaneDistance = DefaultFarPlaneDistance);
 	virtual ~FirstPersonCamera() = default;
@@ -22,6 +23,8 @@ public:
 	float& MovementRate();
 
 	virtual void UpdateViewMatrix() override;
+
+	void ResetOrientation();
 
 	virtual void Initialize() override;
 	virtual void Update(UpdateEventArgs& args) override;
