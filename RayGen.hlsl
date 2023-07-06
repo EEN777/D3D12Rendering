@@ -16,19 +16,23 @@ cbuffer CameraParams : register(b0)
 
 [shader("raygeneration")] 
 void RayGen() {
-  // Initialize the ray payload
+    
   HitInfo payload;
   payload.colorAndDistance = float4(0.9, 0.6, 0.2, 1);
 
-  // Get the location within the dispatched 2D grid of work items
-  // (often maps to pixels, so this could represent a pixel coordinate).
   uint2 launchIndex = DispatchRaysIndex().xy;
   float2 dims = float2(DispatchRaysDimensions().xy);
   float2 d = (((launchIndex.xy + 0.5f) / dims.xy) * 2.f - 1.f);
     
     RayDesc ray;
-    ray.Origin = float3(d.x, d.y, 1);
-    ray.Direction = float3(0, 0, -1);
+    //ray.Origin = float3(d.x, -d.y, 1.0f);
+    //ray.Direction = float3(a, 0, -1);
+    //ray.TMin = 0;
+    //ray.TMax = 100000;
+    
+    ray.Origin = mul(viewI, float4(0, 0, 0, 1));
+    float4 target = mul(projectionI, float4(d.x, -d.y, 1, 1));
+    ray.Direction = mul(viewI, float4(target.xyz, 0));
     ray.TMin = 0;
     ray.TMax = 100000;
     

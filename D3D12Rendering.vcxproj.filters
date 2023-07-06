@@ -2,109 +2,207 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Window.cpp" />
-    <ClCompile Include="CommandQueue.cpp" />
-    <ClCompile Include="HighResolutionClock.cpp" />
-    <ClCompile Include="Application.cpp" />
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="Game.cpp" />
-    <ClCompile Include="CubeDemo.cpp" />
-    <ClCompile Include="MatrixHelper.cpp">
-      <Filter>Utility</Filter>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>Models</Filter>
     </ClCompile>
-    <ClCompile Include="VectorHelper.cpp">
-      <Filter>Utility</Filter>
+    <ClCompile Include="Model.cpp">
+      <Filter>Models</Filter>
     </ClCompile>
-    <ClCompile Include="Camera.cpp">
-      <Filter>Utility</Filter>
+    <ClCompile Include="ModelMaterial.cpp">
+      <Filter>Models</Filter>
     </ClCompile>
-    <ClCompile Include="FirstPersonCamera.cpp">
-      <Filter>Utility</Filter>
+    <ClCompile Include="StreamHelper.cpp">
+      <Filter>Helpers</Filter>
     </ClCompile>
-    <ClCompile Include="PerspectiveCamera.cpp">
-      <Filter>Utility</Filter>
+    <ClCompile Include="CubeDemo.cpp">
+      <Filter>CubeDemo</Filter>
     </ClCompile>
-    <ClCompile Include="UploadBuffer.cpp">
-      <Filter>Utility</Filter>
+    <ClCompile Include="ContentManager.cpp">
+      <Filter>Utility\ContentManager</Filter>
     </ClCompile>
-    <ClCompile Include="DescriptorAllocator.cpp">
-      <Filter>Utility</Filter>
+    <ClCompile Include="ContentTypeReader.cpp">
+      <Filter>Utility\ContentManager</Filter>
+    </ClCompile>
+    <ClCompile Include="ContentTypeReaderManager.cpp">
+      <Filter>Utility\ContentManager</Filter>
+    </ClCompile>
+    <ClCompile Include="StringHelper.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelReader.cpp">
+      <Filter>Utility\ContentManager\ContentReaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Application.cpp">
+      <Filter>Utility\Framework</Filter>
     </ClCompile>
     <ClCompile Include="nv_helpers_dx12\BottomLevelASGenerator.cpp">
-      <Filter>Utility</Filter>
+      <Filter>Utility\Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="CommandQueue.cpp">
+      <Filter>Utility\Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>Utility\Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="HighResolutionClock.cpp">
+      <Filter>Utility\Framework</Filter>
     </ClCompile>
     <ClCompile Include="nv_helpers_dx12\RaytracingPipelineGenerator.cpp">
-      <Filter>Utility</Filter>
+      <Filter>Utility\Framework</Filter>
     </ClCompile>
     <ClCompile Include="nv_helpers_dx12\RootSignatureGenerator.cpp">
-      <Filter>Utility</Filter>
+      <Filter>Utility\Framework</Filter>
     </ClCompile>
     <ClCompile Include="nv_helpers_dx12\ShaderBindingTableGenerator.cpp">
-      <Filter>Utility</Filter>
+      <Filter>Utility\Framework</Filter>
     </ClCompile>
     <ClCompile Include="nv_helpers_dx12\TopLevelASGenerator.cpp">
-      <Filter>Utility</Filter>
+      <Filter>Utility\Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="UploadBuffer.cpp">
+      <Filter>Utility\Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="Window.cpp">
+      <Filter>Utility\Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Utility\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="PerspectiveCamera.cpp">
+      <Filter>Utility\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="FirstPersonCamera.cpp">
+      <Filter>Utility\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="MatrixHelper.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="VectorHelper.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="DDSTextureLoader.cpp">
+      <Filter>Utility\ContentManager</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Helpers.h" />
-    <ClInclude Include="Window.h" />
-    <ClInclude Include="Application.h" />
-    <ClInclude Include="CommandQueue.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Game.h" />
-    <ClInclude Include="Events.h" />
-    <ClInclude Include="KeyCodes.h" />
-    <ClInclude Include="HighResolutionClock.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="CubeDemo.h" />
-    <ClInclude Include="Camera.h">
-      <Filter>Utility</Filter>
+    <ClInclude Include="Mesh.h">
+      <Filter>Models</Filter>
     </ClInclude>
-    <ClInclude Include="MatrixHelper.h">
-      <Filter>Utility</Filter>
+    <ClInclude Include="Model.h">
+      <Filter>Models</Filter>
     </ClInclude>
-    <ClInclude Include="VectorHelper.h">
-      <Filter>Utility</Filter>
+    <ClInclude Include="ModelMaterial.h">
+      <Filter>Models</Filter>
     </ClInclude>
-    <ClInclude Include="PerspectiveCamera.h">
-      <Filter>Utility</Filter>
+    <ClInclude Include="StreamHelper.h">
+      <Filter>Helpers</Filter>
     </ClInclude>
-    <ClInclude Include="FirstPersonCamera.h">
-      <Filter>Utility</Filter>
+    <ClInclude Include="CubeDemo.h">
+      <Filter>CubeDemo</Filter>
     </ClInclude>
-    <ClInclude Include="UploadBuffer.h">
-      <Filter>Utility</Filter>
+    <ClInclude Include="CommonStructures.h">
+      <Filter>Helpers</Filter>
     </ClInclude>
-    <ClInclude Include="Defines.h">
-      <Filter>Utility</Filter>
+    <ClInclude Include="ContentManager.h">
+      <Filter>Utility\ContentManager</Filter>
     </ClInclude>
-    <ClInclude Include="DescriptorAllocator.h">
-      <Filter>Utility</Filter>
+    <ClInclude Include="ContentTypeReader.h">
+      <Filter>Utility\ContentManager</Filter>
     </ClInclude>
-    <ClInclude Include="DescriptorAllocatorPage.h">
-      <Filter>Utility</Filter>
+    <ClInclude Include="ContentTypeReaderManager.h">
+      <Filter>Utility\ContentManager</Filter>
     </ClInclude>
-    <ClInclude Include="DXRHelper.h">
-      <Filter>Utility</Filter>
+    <ClInclude Include="StringHelper.h">
+      <Filter>Helpers</Filter>
     </ClInclude>
-    <ClInclude Include="DXSampleHelper.h">
-      <Filter>Utility</Filter>
+    <ClInclude Include="ModelReader.h">
+      <Filter>Utility\ContentManager\ContentReaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Application.h">
+      <Filter>Utility\Framework</Filter>
     </ClInclude>
     <ClInclude Include="nv_helpers_dx12\BottomLevelASGenerator.h">
-      <Filter>Utility</Filter>
+      <Filter>Utility\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandQueue.h">
+      <Filter>Utility\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.h">
+      <Filter>Utility\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="HighResolutionClock.h">
+      <Filter>Utility\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="KeyCodes.h">
+      <Filter>Utility\Framework</Filter>
     </ClInclude>
     <ClInclude Include="nv_helpers_dx12\RaytracingPipelineGenerator.h">
-      <Filter>Utility</Filter>
+      <Filter>Utility\Framework</Filter>
     </ClInclude>
     <ClInclude Include="nv_helpers_dx12\RootSignatureGenerator.h">
-      <Filter>Utility</Filter>
+      <Filter>Utility\Framework</Filter>
     </ClInclude>
     <ClInclude Include="nv_helpers_dx12\ShaderBindingTableGenerator.h">
-      <Filter>Utility</Filter>
+      <Filter>Utility\Framework</Filter>
     </ClInclude>
     <ClInclude Include="nv_helpers_dx12\TopLevelASGenerator.h">
-      <Filter>Utility</Filter>
+      <Filter>Utility\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="UploadBuffer.h">
+      <Filter>Utility\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="Window.h">
+      <Filter>Utility\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="PerspectiveCamera.h">
+      <Filter>Utility\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Utility\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="FirstPersonCamera.h">
+      <Filter>Utility\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Events.h">
+      <Filter>Utility\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="RTTI.h">
+      <Filter>Utility\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="Defines.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="DXRHelper.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="DXSampleHelper.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="Helpers.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="MatrixHelper.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="VectorHelper.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureLoader.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="DDSTextureLoader.h">
+      <Filter>Utility\ContentManager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -113,6 +211,33 @@
     </Filter>
     <Filter Include="Utility">
       <UniqueIdentifier>{a63fa1cb-3cfc-4672-a0b3-5d80f3512d65}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Models">
+      <UniqueIdentifier>{8ff00f8f-7d45-4a91-b95b-13649e382426}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Helpers">
+      <UniqueIdentifier>{b9448450-0d10-4f3e-b585-aaf67f8445af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ModelDemo">
+      <UniqueIdentifier>{f7988d73-f945-4267-a47c-a2c595662ddc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CubeDemo">
+      <UniqueIdentifier>{d935544b-256c-480b-8231-ae99fbc3234b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utility\ContentManager">
+      <UniqueIdentifier>{77877c53-86ad-4e8f-b462-69a5ac4dbf52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utility\ContentManager\ContentReaders">
+      <UniqueIdentifier>{2ad98b5a-3204-4008-832c-815bfb0d9532}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content">
+      <UniqueIdentifier>{a5004a07-dd33-4ea3-bbe3-ca5f6c7cb1ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utility\Framework">
+      <UniqueIdentifier>{222913d4-e510-4f44-b8bd-5fd76fb7108f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utility\Camera">
+      <UniqueIdentifier>{aca7643d-980b-4628-85f0-226a4a60cf84}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -124,14 +249,20 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="VectorHelper.inl">
-      <Filter>Utility</Filter>
-    </None>
     <None Include="dxcompiler.dll">
       <Filter>Shaders</Filter>
     </None>
     <None Include="dxil.dll">
       <Filter>Shaders</Filter>
+    </None>
+    <None Include="ContentManager.inl">
+      <Filter>Utility\ContentManager</Filter>
+    </None>
+    <None Include="ContentTypeReader.inl">
+      <Filter>Utility\ContentManager</Filter>
+    </None>
+    <None Include="VectorHelper.inl">
+      <Filter>Helpers</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -146,6 +277,27 @@
     </CopyFileToFolders>
     <CopyFileToFolders Include="RayGen.hlsl">
       <Filter>Shaders</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\Cube.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\beach_ball.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\Cece_Mesh.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\Sphere.obj.bin">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\TestFile.png">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\EarthComposite.dds">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\earthmap.jpg">
+      <Filter>Content</Filter>
     </CopyFileToFolders>
   </ItemGroup>
 </Project>

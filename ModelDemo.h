@@ -3,15 +3,12 @@
 #include "Window.h"
 #include "FirstPersonCamera.h"
 #include <DirectXMath.h>
-#include "TextureLoader.h"
-
-#include "ContentManager.h"
 
 #include <dxcapi.h>
 #include "nv_helpers_dx12/TopLevelASGenerator.h"
 #include "nv_helpers_dx12/ShaderBindingTableGenerator.h"
 
-class CubeDemo : public Game
+class ModelDemo : public Game
 {
 	uint64_t _fenceValues[Window::BufferCount]{};
 	Microsoft::WRL::ComPtr<ID3D12Resource> _vertexBuffer;
@@ -88,17 +85,8 @@ class CubeDemo : public Game
 	ComPtr<ID3D12DescriptorHeap> m_constHeap;
 	uint32_t m_cameraBufferSize = 0;
 
-	Library::ContentManager _contentManager{};
-
-	//temp
-	UINT indexCount;
-	ComPtr<ID3D12Resource> _textureResource;
-	ComPtr<ID3D12Resource> _textureUploadResource;
-	ComPtr<ID3D12DescriptorHeap> _texDescriptorHeap;
-
-	TextureLoader::TextureLoader _textureLoader{};
-
 public:
+	using super = Game;
 
 	struct PipelineStateStream
 	{
@@ -111,18 +99,16 @@ public:
 		CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS RTVFormats;
 	} pipelineStateStream;
 
-	using super = Game;
-
 	std::vector<KeyCode::Key> cameraKeyArgument{};
 	std::pair<int, int> cameraMouseArgument{INT_MIN, INT_MIN};
 	std::pair<int, int> startingMousePos{};
 
 
-	CubeDemo(const std::wstring& name, int width, int height, bool vSync = false);
+	ModelDemo(const std::wstring& name, int width, int height, bool vSync = false);
 	virtual bool LoadContent() override;
 	virtual bool UnloadContent() override;
 
-protected: 
+protected:
 	virtual void OnUpdate(UpdateEventArgs& args) override;
 	virtual void OnRender(RenderEventArgs& args) override;
 	virtual void OnKeyPressed(KeyEventArgs& args) override;

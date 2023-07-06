@@ -167,7 +167,6 @@ void FirstPersonCamera::UpdatePosition(const DirectX::XMFLOAT3& movementAmount, 
 
     InvokePositionUpdatedCallbacks();
     _viewMatrixDataDirty = true;
-
 }
 
 inline void FirstPersonCamera::InvokePositionUpdatedCallbacks()

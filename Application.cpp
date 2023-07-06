@@ -152,9 +152,10 @@ Microsoft::WRL::ComPtr<IDXGIAdapter4> Application::GetAdapter(bool bUseWarp)
 
     return dxgiAdapter4;
 }
-Microsoft::WRL::ComPtr<ID3D12Device5> Application::CreateDevice(Microsoft::WRL::ComPtr<IDXGIAdapter4> adapter)
+Microsoft::WRL::ComPtr<ID3D12Device9> Application::CreateDevice(Microsoft::WRL::ComPtr<IDXGIAdapter4> adapter)
 {
-    ComPtr<ID3D12Device5> d3d12Device2;
+
+    ComPtr<ID3D12Device9> d3d12Device2;
     ThrowIfFailedI(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_2, IID_PPV_ARGS(&d3d12Device2)));
     //    NAME_D3D12_OBJECT(d3d12Device2);
 
@@ -313,7 +314,7 @@ void Application::Quit(int exitCode)
     PostQuitMessage(exitCode);
 }
 
-Microsoft::WRL::ComPtr<ID3D12Device5> Application::GetDevice() const
+Microsoft::WRL::ComPtr<ID3D12Device9> Application::GetDevice() const
 {
     return m_d3d12Device;
 }

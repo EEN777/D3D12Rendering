@@ -8,6 +8,8 @@
 
 #include <dxgidebug.h>
 
+#pragma comment(lib, "dxguid.lib")
+
 void ReportLiveObjects()
 {
     IDXGIDebug1* dxgiDebug;
@@ -32,7 +34,7 @@ int CALLBACK wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR lpCmdL
 
     Application::Create(hInstance);
     {
-        std::shared_ptr<CubeDemo> demo = std::make_shared<CubeDemo>(L"Learning DirectX 12 - Lesson 2", 1280, 720);
+        std::shared_ptr<CubeDemo> demo = std::make_shared<CubeDemo>(L"Learning DirectX 12 - Cube Demo", 1280, 720);
         retCode = Application::Get().Run(demo);
     }
     Application::Destroy();

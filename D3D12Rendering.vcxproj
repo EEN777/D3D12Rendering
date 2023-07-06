@@ -111,7 +111,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -146,13 +146,20 @@
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CommandQueue.cpp" />
+    <ClCompile Include="ContentManager.cpp" />
+    <ClCompile Include="ContentTypeReader.cpp" />
+    <ClCompile Include="ContentTypeReaderManager.cpp" />
     <ClCompile Include="CubeDemo.cpp" />
-    <ClCompile Include="DescriptorAllocator.cpp" />
+    <ClCompile Include="DDSTextureLoader.cpp" />
     <ClCompile Include="FirstPersonCamera.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="HighResolutionClock.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MatrixHelper.cpp" />
+    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Model.cpp" />
+    <ClCompile Include="ModelMaterial.cpp" />
+    <ClCompile Include="ModelReader.cpp" />
     <ClCompile Include="nv_helpers_dx12\BottomLevelASGenerator.cpp" />
     <ClCompile Include="nv_helpers_dx12\RaytracingPipelineGenerator.cpp" />
     <ClCompile Include="nv_helpers_dx12\RootSignatureGenerator.cpp" />
@@ -160,7 +167,10 @@
     <ClCompile Include="nv_helpers_dx12\TopLevelASGenerator.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="PerspectiveCamera.cpp" />
+    <ClCompile Include="StreamHelper.cpp" />
+    <ClCompile Include="StringHelper.cpp" />
     <ClCompile Include="UploadBuffer.cpp" />
+    <ClCompile Include="Utility.cpp" />
     <ClCompile Include="VectorHelper.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
@@ -168,10 +178,13 @@
     <ClInclude Include="Application.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CommandQueue.h" />
+    <ClInclude Include="CommonStructures.h" />
+    <ClInclude Include="ContentManager.h" />
+    <ClInclude Include="ContentTypeReader.h" />
+    <ClInclude Include="ContentTypeReaderManager.h" />
     <ClInclude Include="CubeDemo.h" />
+    <ClInclude Include="DDSTextureLoader.h" />
     <ClInclude Include="Defines.h" />
-    <ClInclude Include="DescriptorAllocator.h" />
-    <ClInclude Include="DescriptorAllocatorPage.h" />
     <ClInclude Include="DXRHelper.h" />
     <ClInclude Include="DXSampleHelper.h" />
     <ClInclude Include="Events.h" />
@@ -181,6 +194,10 @@
     <ClInclude Include="HighResolutionClock.h" />
     <ClInclude Include="KeyCodes.h" />
     <ClInclude Include="MatrixHelper.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Model.h" />
+    <ClInclude Include="ModelMaterial.h" />
+    <ClInclude Include="ModelReader.h" />
     <ClInclude Include="nv_helpers_dx12\BottomLevelASGenerator.h" />
     <ClInclude Include="nv_helpers_dx12\RaytracingPipelineGenerator.h" />
     <ClInclude Include="nv_helpers_dx12\RootSignatureGenerator.h" />
@@ -189,7 +206,12 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="PerspectiveCamera.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="RTTI.h" />
+    <ClInclude Include="StreamHelper.h" />
+    <ClInclude Include="StringHelper.h" />
+    <ClInclude Include="TextureLoader.h" />
     <ClInclude Include="UploadBuffer.h" />
+    <ClInclude Include="Utility.h" />
     <ClInclude Include="VectorHelper.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
@@ -276,9 +298,42 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="ContentManager.inl" />
+    <None Include="ContentTypeReader.inl" />
+    <CopyFileToFolders Include="Content\Cube.model">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\beach_ball.model">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\Cece_Mesh.model">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\Sphere.obj.bin">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
     <None Include="dxcompiler.dll" />
     <None Include="dxil.dll" />
     <None Include="VectorHelper.inl" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="Content\TestFile.png">
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="Content\EarthComposite.dds">
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="Content\earthmap.jpg">
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "CubeDemo.h"
+#include "ModelDemo.h"
 
 #include "Application.h"
 #include "CommandQueue.h"
@@ -9,20 +9,11 @@
 #include "Model.h"
 #include "Mesh.h"
 #include "ModelMaterial.h"
+
 #include "DXRHelper.h"
 #include "nv_helpers_dx12/BottomLevelASGenerator.h"
 #include "nv_helpers_dx12/RaytracingPipelineGenerator.h"
 #include "nv_helpers_dx12/RootSignatureGenerator.h"
-
-#include <DirectXTex.h>
-#include "TextureLoader.h"
-
-#include "MatrixHelper.h"
-#include "VectorHelper.h"
-
-#include "ContentTypeReaderManager.h"
-
-#include "Utility.h"
 
 #include <d3dx12.h>
 #include <d3dcompiler.h>
@@ -33,18 +24,18 @@ using namespace DirectX;
 
 struct VertexPosColor
 {
-	XMFLOAT3 Position;
-	XMFLOAT3 Color;
+    XMFLOAT3 Position;
+    XMFLOAT3 Color;
 };
 
 
 static VertexPosColor vertices[8]
 {
     { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
-    { XMFLOAT3(-1.0f,  1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) }, 
-    { XMFLOAT3(1.0f,  1.0f, -1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) }, 
-    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) }, 
-    { XMFLOAT3(-1.0f, -1.0f,  1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) }, 
+    { XMFLOAT3(-1.0f,  1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    { XMFLOAT3(1.0f,  1.0f, -1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
+    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+    { XMFLOAT3(-1.0f, -1.0f,  1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
     { XMFLOAT3(-1.0f,  1.0f,  1.0f), XMFLOAT3(0.0f, 1.0f, 1.0f) },
     { XMFLOAT3(1.0f,  1.0f,  1.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
     { XMFLOAT3(1.0f, -1.0f,  1.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) }
@@ -60,7 +51,7 @@ static uint32_t indices[36]
     4,0,3,4,3,7
 };
 
-ComPtr<ID3D12RootSignature> CubeDemo::CreateRayGenSignature()
+ComPtr<ID3D12RootSignature> ModelDemo::CreateRayGenSignature()
 {
     nv_helpers_dx12::RootSignatureGenerator rsc;
     rsc.AddHeapRangesParameter({ {0, 1, 0, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0}, {0, 1, 0, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1}, {0, 1, 0, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2} });
@@ -68,7 +59,7 @@ ComPtr<ID3D12RootSignature> CubeDemo::CreateRayGenSignature()
     return rsc.Generate(Application::Get().GetDevice().Get(), true);
 }
 
-ComPtr<ID3D12RootSignature> CubeDemo::CreateHitSignature()
+ComPtr<ID3D12RootSignature> ModelDemo::CreateHitSignature()
 {
     nv_helpers_dx12::RootSignatureGenerator rsc;
     rsc.AddRootParameter(D3D12_ROOT_PARAMETER_TYPE_SRV, 0);
@@ -77,7 +68,7 @@ ComPtr<ID3D12RootSignature> CubeDemo::CreateHitSignature()
     return rsc.Generate(Application::Get().GetDevice().Get(), true);
 }
 
-ComPtr<ID3D12RootSignature> CubeDemo::CreateMissSignature()
+ComPtr<ID3D12RootSignature> ModelDemo::CreateMissSignature()
 {
     nv_helpers_dx12::RootSignatureGenerator rsc;
 
@@ -85,7 +76,7 @@ ComPtr<ID3D12RootSignature> CubeDemo::CreateMissSignature()
 }
 
 
-void CubeDemo::CreateRayTracingPipeline()
+void ModelDemo::CreateRayTracingPipeline()
 {
     auto device = Application::Get().GetDevice().Get();
     nv_helpers_dx12::RayTracingPipelineGenerator pipeline{device};
@@ -103,12 +94,10 @@ void CubeDemo::CreateRayTracingPipeline()
     m_hitSignature = CreateHitSignature();
 
     pipeline.AddHitGroup(L"HitGroup", L"ClosestHit");
-    pipeline.AddHitGroup(L"TestHitGroup", L"ClosestHit");
 
     pipeline.AddRootSignatureAssociation(m_rayGenSignature.Get(), { L"RayGen" });
     pipeline.AddRootSignatureAssociation(m_missSignature.Get(), { L"Miss" });
     pipeline.AddRootSignatureAssociation(m_hitSignature.Get(), { L"HitGroup" });
-    pipeline.AddRootSignatureAssociation(m_hitSignature.Get(), { L"TestHitGroup" });
 
     pipeline.SetMaxPayloadSize(4 * sizeof(float));
     pipeline.SetMaxAttributeSize(2 * sizeof(float));
@@ -118,7 +107,7 @@ void CubeDemo::CreateRayTracingPipeline()
     ThrowIfFailed(m_rtStateObject->QueryInterface(IID_PPV_ARGS(&m_rtStateObjectProps)));
 }
 
-void CubeDemo::CreateRaytracingOutputBuffer()
+void ModelDemo::CreateRaytracingOutputBuffer()
 {
     auto device = Application::Get().GetDevice().Get();
 
@@ -137,11 +126,11 @@ void CubeDemo::CreateRaytracingOutputBuffer()
 
 }
 
-void CubeDemo::CreateShaderResourceHeap()
+void ModelDemo::CreateShaderResourceHeap()
 {
     auto device = Application::Get().GetDevice().Get();
 
-    m_srvUavHeap = nv_helpers_dx12::CreateDescriptorHeap(device, 4, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true);
+    m_srvUavHeap = nv_helpers_dx12::CreateDescriptorHeap(device, 3, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true);
 
     D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = m_srvUavHeap->GetCPUDescriptorHandleForHeapStart();
 
@@ -165,45 +154,10 @@ void CubeDemo::CreateShaderResourceHeap()
     cbvDesc.BufferLocation = m_cameraBuffer->GetGPUVirtualAddress();
     cbvDesc.SizeInBytes = m_cameraBufferSize;
     device->CreateConstantBufferView(&cbvDesc, srvHandle);
-    srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDescTex = {};
-    srvDescTex.Format = _textureResource->GetDesc().Format;
-    srvDescTex.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-    srvDescTex.Texture2D.MipLevels = 1; // Only one level of detail
-    srvDescTex.Texture2D.MostDetailedMip = 0;
-    srvDescTex.Texture2D.ResourceMinLODClamp = 0.0f;
-    srvDescTex.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-    device->CreateShaderResourceView(_textureResource.Get(), &srvDescTex, srvHandle);
-
-    //D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc = {};
-    //samplerHeapDesc.NumDescriptors = 1;
-    //samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-    //samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    //ID3D12DescriptorHeap* samplerDescriptorHeap;
-    //device->CreateDescriptorHeap(&samplerHeapDesc, IID_PPV_ARGS(&samplerDescriptorHeap));
-
-    //D3D12_SAMPLER_DESC samplerDesc = {};
-    //samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-    //samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    //samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    //samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    //samplerDesc.MipLODBias = 0;
-    //samplerDesc.MaxAnisotropy = 1;
-    //samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-    //samplerDesc.BorderColor[0] = 1.0f;
-    //samplerDesc.BorderColor[1] = 1.0f;
-    //samplerDesc.BorderColor[2] = 1.0f;
-    //samplerDesc.BorderColor[3] = 1.0f;
-    //samplerDesc.MinLOD = 0;
-    //samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
-
-    //device->CreateSampler(&samplerDesc, samplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
 }
 
-void CubeDemo::CreateShaderBindingTable()
+void ModelDemo::CreateShaderBindingTable()
 {
     auto device = Application::Get().GetDevice().Get();
 
@@ -213,8 +167,7 @@ void CubeDemo::CreateShaderBindingTable()
     auto heapPointer = reinterpret_cast<uint64_t*>(srvUavHeapHandle.ptr);
     m_sbtHelper.AddRayGenerationProgram(L"RayGen", { heapPointer });
     m_sbtHelper.AddMissProgram(L"Miss", {});
-    m_sbtHelper.AddHitGroup(L"HitGroup", { {(void*)(_vertexBuffer->GetGPUVirtualAddress()), (void*)(_indexBuffer->GetGPUVirtualAddress())}});
-    m_sbtHelper.AddHitGroup(L"TestHitGroup", { {(void*)(_vertexBuffer->GetGPUVirtualAddress()), (void*)(_indexBuffer->GetGPUVirtualAddress())}});
+    m_sbtHelper.AddHitGroup(L"HitGroup", { {(void*)(_vertexBuffer->GetGPUVirtualAddress()), (void*)(_indexBuffer->GetGPUVirtualAddress())} });
 
     const uint32_t sbtSize = m_sbtHelper.ComputeSBTSize();
     m_sbtStorage = nv_helpers_dx12::CreateBuffer(device, sbtSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, nv_helpers_dx12::kUploadHeapProps);
@@ -226,7 +179,7 @@ void CubeDemo::CreateShaderBindingTable()
     m_sbtHelper.Generate(m_sbtStorage.Get(), m_rtStateObjectProps.Get());
 }
 
-void CubeDemo::CreateCameraBuffer()
+void ModelDemo::CreateCameraBuffer()
 {
     auto device = Application::Get().GetDevice().Get();
 
@@ -247,7 +200,7 @@ void CubeDemo::CreateCameraBuffer()
     device->CreateConstantBufferView(&cbvDesc, srvHandle);
 }
 
-void CubeDemo::UpdateCameraBuffer()
+void ModelDemo::UpdateCameraBuffer()
 {
     std::vector<XMMATRIX> matrices{ 4 };
     XMVECTOR Eye = XMVectorSet(1.5f, 1.5f, 1.5f, 0.0f);
@@ -269,7 +222,7 @@ void CubeDemo::UpdateCameraBuffer()
 
 }
 
-CubeDemo::CubeDemo(const std::wstring& name, int width, int height, bool vSync) :
+ModelDemo::ModelDemo(const std::wstring& name, int width, int height, bool vSync) :
     super{ name, width, height, vSync },
     _scissorRect{ CD3DX12_RECT{0, 0, LONG_MAX, LONG_MAX } },
     _viewport{ CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height)) },
@@ -279,37 +232,12 @@ CubeDemo::CubeDemo(const std::wstring& name, int width, int height, bool vSync) 
 
 }
 
-bool CubeDemo::LoadContent()
+bool ModelDemo::LoadContent()
 {
-    
-   // const auto model = mGame->Content().Load<Model>(Utility::ToWideString(mModelFileName));
-    //_contentManager.Initialize();
-    
-    // Loading model here
-    Library::ContentTypeReaderManager::Initialize();
-
-    const auto model = _contentManager.Load<Library::Model>(L"Sphere.obj.bin");
-    Library::Mesh* mesh = model->Meshes().at(0).get();
-
-    auto vertexVector = mesh->Vertices();
-    auto texCoordVector = mesh->TextureCoordinates().at(0);
-    std::vector<DirectX::XMFLOAT3> vertexAndColorVector;
-
-    std::size_t currentPosition{ 0 };
-    for (auto& vert : vertexVector)
-    {
-        vertexAndColorVector.push_back(vert);
-        vertexAndColorVector.push_back(texCoordVector.at(currentPosition));
-        ++currentPosition;
-    }
-
-    std::vector<UINT> meshIndices = mesh->Indices();
-
-
     //Check Raytracing feature support.
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 options5{};
     ThrowIfFailedI(
-        Application::Get().GetDevice()->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &options5, sizeof(options5))); 
+        Application::Get().GetDevice()->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &options5, sizeof(options5)));
     if (options5.RaytracingTier < D3D12_RAYTRACING_TIER_1_0)
     {
         throw std::runtime_error("Raytracing not supported on device");
@@ -319,26 +247,24 @@ bool CubeDemo::LoadContent()
     _camera->Initialize();
     _camera->SetPosition(0, 0, -35);
     auto device = Application::Get().GetDevice();
-    auto commandQueue = Application::Get().GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
+    auto commandQueue = Application::Get().GetCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
     auto commandList = commandQueue->GetCommandList();
 
     ComPtr<ID3D12Resource> intermediateVertexBuffer;
     UpdateBufferResource(commandList.Get(),
-        &_vertexBuffer, &intermediateVertexBuffer, vertexAndColorVector.size(), sizeof(VertexPosColor), vertexAndColorVector.data());
+        &_vertexBuffer, &intermediateVertexBuffer, _countof(vertices), sizeof(VertexPosColor), vertices);
 
     _vertexBufferView.BufferLocation = _vertexBuffer->GetGPUVirtualAddress();
-    _vertexBufferView.SizeInBytes = sizeof(XMFLOAT3) * static_cast<UINT>(vertexAndColorVector.size());
+    _vertexBufferView.SizeInBytes = sizeof(vertices);
     _vertexBufferView.StrideInBytes = sizeof(VertexPosColor);
 
     ComPtr<ID3D12Resource> intermediateIndexBuffer;
     UpdateBufferResource(commandList.Get(), &_indexBuffer, &intermediateIndexBuffer,
-        meshIndices.size(), sizeof(uint32_t), meshIndices.data());
+        _countof(indices), sizeof(uint32_t), indices);
 
     _indexBufferView.BufferLocation = _indexBuffer->GetGPUVirtualAddress();
     _indexBufferView.Format = DXGI_FORMAT_R32_UINT;
-    _indexBufferView.SizeInBytes = static_cast<UINT>(meshIndices.size()) * sizeof(UINT);
-
-    indexCount = static_cast<UINT>(meshIndices.size());
+    _indexBufferView.SizeInBytes = sizeof(indices);
 
     D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc{};
     dsvHeapDesc.NumDescriptors = 1;
@@ -370,76 +296,12 @@ bool CubeDemo::LoadContent()
         D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
         D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
         D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
-        D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS
+        D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
+        D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS
     };
 
-    D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-    srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-    srvHeapDesc.NumDescriptors = 1; // Number of textures to bind
-    srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    ThrowIfFailedI(device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(_texDescriptorHeap.GetAddressOf())));
-
-    CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(_texDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-
-    auto textureCommandList = commandQueue->GetCommandList();
-
-    ThrowIfFailedI(DirectX::CreateDDSTextureFromFile12(device.Get(),
-        textureCommandList.Get(), L"Content/EarthComposite.dds",
-        _textureResource, _textureUploadResource));
-
-    auto textureFenceValue = commandQueue->ExecuteCommandList(textureCommandList);
-    commandQueue->WaitForFenceValue(textureFenceValue);
-
-    // Need to load texture first.
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Format = _textureResource->GetDesc().Format;
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MipLevels = 1; // Only one level of detail
-    srvDesc.Texture2D.MostDetailedMip = 0;
-    srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-    device->CreateShaderResourceView(_textureResource.Get(), &srvDesc, hDescriptor);
-
-    D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc = {};
-    samplerHeapDesc.NumDescriptors = 1;
-    samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-    samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    ID3D12DescriptorHeap* samplerDescriptorHeap;
-    device->CreateDescriptorHeap(&samplerHeapDesc, IID_PPV_ARGS(&samplerDescriptorHeap));
-
-    D3D12_SAMPLER_DESC samplerDesc = {};
-    samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-    samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    samplerDesc.MipLODBias = 0;
-    samplerDesc.MaxAnisotropy = 1;
-    samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-    samplerDesc.BorderColor[0] = 1.0f;
-    samplerDesc.BorderColor[1] = 1.0f;
-    samplerDesc.BorderColor[2] = 1.0f;
-    samplerDesc.BorderColor[3] = 1.0f;
-    samplerDesc.MinLOD = 0;
-    samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
-
-    device->CreateSampler(&samplerDesc, samplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-
-
-    CD3DX12_DESCRIPTOR_RANGE1 descriptorRangeSampler;
-    descriptorRangeSampler.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
-
-
-    CD3DX12_ROOT_DESCRIPTOR_TABLE1 descriptorTableSampler;
-    descriptorTableSampler.Init(1, &descriptorRangeSampler);
-
-    CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
-    ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-
-    CD3DX12_ROOT_PARAMETER1 rootParameters[3];
+    CD3DX12_ROOT_PARAMETER1 rootParameters[1];
     rootParameters[0].InitAsConstants(sizeof(XMMATRIX) / 4, 0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
-    rootParameters[1].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);//InitAsShaderResourceView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
-    rootParameters[2].InitAsDescriptorTable(1, &descriptorRangeSampler, D3D12_SHADER_VISIBILITY_PIXEL);
 
     CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDescription;
     rootSignatureDescription.Init_1_1(_countof(rootParameters), rootParameters, 0, nullptr, rootSignatureFlags);
@@ -449,15 +311,15 @@ bool CubeDemo::LoadContent()
     ThrowIfFailedI(D3DX12SerializeVersionedRootSignature(&rootSignatureDescription, featureData.HighestVersion, &rootSignatureBlob, &errorBlob));
     ThrowIfFailedI(device->CreateRootSignature(0, rootSignatureBlob->GetBufferPointer(), rootSignatureBlob->GetBufferSize(), IID_PPV_ARGS(&_rootSignature)));
 
+    //Camera Root Signature
+
+    CD3DX12_ROOT_PARAMETER constantParameter;
     CD3DX12_DESCRIPTOR_RANGE range;
     range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-
-    CD3DX12_ROOT_PARAMETER rtParameters[1];
-    rtParameters[0].InitAsDescriptorTable(1, &range, D3D12_SHADER_VISIBILITY_ALL);
-
+    constantParameter.InitAsDescriptorTable(1, &range, D3D12_SHADER_VISIBILITY_ALL);
 
     CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-    rootSignatureDesc.Init(_countof(rtParameters), rtParameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+    rootSignatureDesc.Init(1, &constantParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
     ComPtr<ID3DBlob> cameraRootSignatureBlob;
     ComPtr<ID3DBlob> cameraRootSignatureErrorBlob;
@@ -481,29 +343,19 @@ bool CubeDemo::LoadContent()
 
     ThrowIfFailedI(device->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&_pipelineState)));
 
+
+
     auto fenceValue = commandQueue->ExecuteCommandList(commandList);
     commandQueue->WaitForFenceValue(fenceValue);
 
     //DXR Init Acceleration Structure Creation
 
-    auto commandQueue2 = Application::Get().GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
+    auto commandQueue2 = Application::Get().GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT); //D3D12_COMMAND_LIST_TYPE_COPY
 
     commandList = commandQueue2->GetCommandList();
 
-    auto fwd = Library::Vector3Helper::Forward;
-    auto up = Library::Vector3Helper::Up;
-    auto right = Library::Vector3Helper::Right;
-    auto pos = XMFLOAT3{-5.0f, -5.0f, -5.0f};
-
-    XMMATRIX worldMatrix = XMMatrixIdentity();
-    Library::MatrixHelper::SetForward(worldMatrix, fwd);
-    Library::MatrixHelper::SetUp(worldMatrix, up);
-    Library::MatrixHelper::SetRight(worldMatrix, right);
-    Library::MatrixHelper::SetTranslation(worldMatrix, pos);
-
-    AccelerationStructureBuffers bottomLevelBuffers = CreateBottomLevelAS({ {_vertexBuffer.Get(), vertexAndColorVector.size()}}, {{_indexBuffer.Get(), meshIndices.size()}}, commandList.Get());
-    //m_bottomLevelASInstances = { { bottomLevelBuffers.result, XMMatrixIdentity() },  { bottomLevelBuffers.result, worldMatrix } }; Doing this adds more than one.
-    m_bottomLevelASInstances = { { bottomLevelBuffers.result, XMMatrixIdentity() }};
+    AccelerationStructureBuffers bottomLevelBuffers = CreateBottomLevelAS({ {_vertexBuffer.Get(), 8} }, { {_indexBuffer.Get(), 36} }, commandList.Get());
+    m_bottomLevelASInstances = { { bottomLevelBuffers.result, XMMatrixIdentity() } };
     CreateTopLevelAS(m_bottomLevelASInstances, commandList.Get());
 
     fenceValue = commandQueue2->ExecuteCommandList(commandList);
@@ -523,12 +375,12 @@ bool CubeDemo::LoadContent()
     return true;
 }
 
-bool CubeDemo::UnloadContent()
+bool ModelDemo::UnloadContent()
 {
     return false;
 }
 
-void CubeDemo::OnUpdate(UpdateEventArgs& args)
+void ModelDemo::OnUpdate(UpdateEventArgs& args)
 {
 
     static uint64_t frameCount = 0;
@@ -545,6 +397,7 @@ void CubeDemo::OnUpdate(UpdateEventArgs& args)
 
     if (totalTime > 1.0)
     {
+
         double fps = frameCount / totalTime;
 
         char buffer[512];
@@ -560,7 +413,7 @@ void CubeDemo::OnUpdate(UpdateEventArgs& args)
     _modelMatrix = XMMatrixRotationAxis(rotationAxis, XMConvertToRadians(angle));
 }
 
-void CubeDemo::OnRender(RenderEventArgs& args)
+void ModelDemo::OnRender(RenderEventArgs& args)
 {
     super::OnRender(args);
 
@@ -577,27 +430,7 @@ void CubeDemo::OnRender(RenderEventArgs& args)
             D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
     }
 
-
-    auto fwd = Library::Vector3Helper::Forward;
-    auto up = Library::Vector3Helper::Up;
-    auto right = Library::Vector3Helper::Right;
-    auto pos = XMFLOAT3{-5.0f, -5.0f, -5.0f };//Library::Vector3Helper::Zero;
-
-    XMMATRIX worldMatrix = XMMatrixIdentity();
-    Library::MatrixHelper::SetForward(worldMatrix, fwd);
-    Library::MatrixHelper::SetUp(worldMatrix, up);
-    Library::MatrixHelper::SetRight(worldMatrix, right);
-    Library::MatrixHelper::SetTranslation(worldMatrix, pos);
-
-    XMFLOAT4X4 temp;
-    XMStoreFloat4x4(&temp, XMMatrixScaling(1.0f, 1.0f, 1.0f) * worldMatrix);
-
-    //_modelMatrix = XMLoadFloat4x4(&temp);
-    worldMatrix = XMLoadFloat4x4(&temp);
-
     XMMATRIX mvpMatrix = XMMatrixMultiply(_modelMatrix, _camera->ViewProjectionMatrix());
-    XMMATRIX mvpMatrix2 = XMMatrixMultiply(worldMatrix, _camera->ViewProjectionMatrix());
-
 
     commandList->SetGraphicsRootSignature(_rootSignature.Get());
     commandList->IASetIndexBuffer(&_indexBufferView);
@@ -611,24 +444,15 @@ void CubeDemo::OnRender(RenderEventArgs& args)
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         commandList->IASetVertexBuffers(0, 1, &_vertexBufferView);
         commandList->SetGraphicsRoot32BitConstants(0, sizeof(XMMATRIX) / 4, &mvpMatrix, 0);
-
-        ID3D12DescriptorHeap* ppHeaps[] = { _texDescriptorHeap.Get() };
-        commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-
-        commandList->SetGraphicsRootDescriptorTable(1, _texDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-
         FLOAT clearColor[]{ 0.4f, 0.6f, 0.9f, 1.0f };
         ClearRTV(commandList, rtv, clearColor);
         ClearDepth(commandList, dsv);
-        commandList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
-        commandList->SetGraphicsRoot32BitConstants(0, sizeof(XMMATRIX) / 4, &mvpMatrix2, 0);
-        commandList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
+        commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);
     }
 
     else
     {
         commandList->SetGraphicsRootSignature(_rtRootSignature.Get());
-        //commandList->SetGraphicsRootDescriptorTable(1, _texDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
         std::vector<ID3D12DescriptorHeap*> heaps{ m_srvUavHeap.Get() };
         commandList->SetDescriptorHeaps(static_cast<UINT>(heaps.size()), heaps.data());
@@ -679,7 +503,7 @@ void CubeDemo::OnRender(RenderEventArgs& args)
 
 }
 
-void CubeDemo::OnKeyPressed(KeyEventArgs& args)
+void ModelDemo::OnKeyPressed(KeyEventArgs& args)
 {
     super::OnKeyPressed(args);
     auto it = std::find(cameraKeyArgument.begin(), cameraKeyArgument.end(), args.Key);
@@ -719,7 +543,7 @@ void CubeDemo::OnKeyPressed(KeyEventArgs& args)
     }
 }
 
-void CubeDemo::OnKeyReleased(KeyEventArgs& args)
+void ModelDemo::OnKeyReleased(KeyEventArgs& args)
 {
     auto it = std::find(cameraKeyArgument.begin(), cameraKeyArgument.end(), args.Key);
     if (it != cameraKeyArgument.end())
@@ -728,13 +552,13 @@ void CubeDemo::OnKeyReleased(KeyEventArgs& args)
     }
 }
 
-void CubeDemo::OnMouseWheel(MouseWheelEventArgs& args)
+void ModelDemo::OnMouseWheel(MouseWheelEventArgs& args)
 {
 
 
 }
 
-void CubeDemo::UpdateBufferResource(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> commandList, ID3D12Resource** destinationResource, ID3D12Resource** intermediateResource, std::size_t numElements, std::size_t elementSize, const void* bufferData, D3D12_RESOURCE_FLAGS flags)
+void ModelDemo::UpdateBufferResource(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> commandList, ID3D12Resource** destinationResource, ID3D12Resource** intermediateResource, std::size_t numElements, std::size_t elementSize, const void* bufferData, D3D12_RESOURCE_FLAGS flags)
 {
     auto device = Application::Get().GetDevice();
     std::size_t bufferSize = numElements * elementSize;
@@ -764,11 +588,11 @@ void CubeDemo::UpdateBufferResource(Microsoft::WRL::ComPtr<ID3D12GraphicsCommand
         subresourceData.RowPitch = bufferSize;
         subresourceData.SlicePitch = subresourceData.RowPitch;
 
-        UpdateSubresources(commandList.Get(),*destinationResource, *intermediateResource, 0, 0, 1, &subresourceData);
+        UpdateSubresources(commandList.Get(), *destinationResource, *intermediateResource, 0, 0, 1, &subresourceData);
     }
 }
 
-CubeDemo::AccelerationStructureBuffers CubeDemo::CreateBottomLevelAS(std::vector<std::pair<ComPtr<ID3D12Resource>, uint32_t>> vVertexBuffers, std::vector<std::pair<ComPtr<ID3D12Resource>, uint32_t>> vIndexBuffers, ID3D12GraphicsCommandList4* commandList)
+ModelDemo::AccelerationStructureBuffers ModelDemo::CreateBottomLevelAS(std::vector<std::pair<ComPtr<ID3D12Resource>, uint32_t>> vVertexBuffers, std::vector<std::pair<ComPtr<ID3D12Resource>, uint32_t>> vIndexBuffers, ID3D12GraphicsCommandList4* commandList)
 {
     nv_helpers_dx12::BottomLevelASGenerator bottomLevelAS;
 
@@ -802,7 +626,7 @@ CubeDemo::AccelerationStructureBuffers CubeDemo::CreateBottomLevelAS(std::vector
     return buffers;
 }
 
-void CubeDemo::CreateTopLevelAS(const std::vector<BottomLevelASInstance>& instances, ID3D12GraphicsCommandList4* commandList)
+void ModelDemo::CreateTopLevelAS(const std::vector<BottomLevelASInstance>& instances, ID3D12GraphicsCommandList4* commandList)
 {
     for (std::size_t i{0}; i < instances.size(); i++)
     {
@@ -824,11 +648,11 @@ void CubeDemo::CreateTopLevelAS(const std::vector<BottomLevelASInstance>& instan
     m_topLevelASGenerator.Generate(commandList, m_topLevelASBuffers.scratch.Get(), m_topLevelASBuffers.result.Get(), m_topLevelASBuffers.descriptors.Get());
 }
 
-void CubeDemo::CreateAccelerationStructures(ID3D12GraphicsCommandList4* commandList)
+void ModelDemo::CreateAccelerationStructures(ID3D12GraphicsCommandList4* commandList)
 {
 }
 
-void CubeDemo::ResizeDepthBuffer(int width, int height)
+void ModelDemo::ResizeDepthBuffer(int width, int height)
 {
     if (_contentLoaded)
     {
@@ -866,7 +690,7 @@ void CubeDemo::ResizeDepthBuffer(int width, int height)
     }
 }
 
-void CubeDemo::OnResize(ResizeEventArgs& args)
+void ModelDemo::OnResize(ResizeEventArgs& args)
 {
     if (args.Width != 1280 || args.Height != 720)
     {
@@ -878,7 +702,7 @@ void CubeDemo::OnResize(ResizeEventArgs& args)
     }
 }
 
-void CubeDemo::OnMouseMoved(MouseMotionEventArgs& args)
+void ModelDemo::OnMouseMoved(MouseMotionEventArgs& args)
 {
     if (_camera->IsAcceptingMouseMovementInputs())
     {
@@ -896,7 +720,7 @@ void CubeDemo::OnMouseMoved(MouseMotionEventArgs& args)
     }
 }
 
-void CubeDemo::OnMouseButtonPressed(MouseButtonEventArgs& args)
+void ModelDemo::OnMouseButtonPressed(MouseButtonEventArgs& args)
 {
     if (args.LeftButton)
     {
@@ -907,7 +731,7 @@ void CubeDemo::OnMouseButtonPressed(MouseButtonEventArgs& args)
     }
 }
 
-void CubeDemo::OnMouseButtonReleased(MouseButtonEventArgs& args)
+void ModelDemo::OnMouseButtonReleased(MouseButtonEventArgs& args)
 {
     if (!args.LeftButton)
     {
@@ -916,7 +740,7 @@ void CubeDemo::OnMouseButtonReleased(MouseButtonEventArgs& args)
     }
 }
 
-void CubeDemo::TransitionResource(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> commandList, Microsoft::WRL::ComPtr<ID3D12Resource> resource, D3D12_RESOURCE_STATES beforeState, D3D12_RESOURCE_STATES afterState)
+void ModelDemo::TransitionResource(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> commandList, Microsoft::WRL::ComPtr<ID3D12Resource> resource, D3D12_RESOURCE_STATES beforeState, D3D12_RESOURCE_STATES afterState)
 {
     CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
         resource.Get(),
@@ -925,12 +749,12 @@ void CubeDemo::TransitionResource(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandLi
     commandList->ResourceBarrier(1, &barrier);
 }
 
-void CubeDemo::ClearRTV(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> commandList, D3D12_CPU_DESCRIPTOR_HANDLE rtv, float* clearColor)
+void ModelDemo::ClearRTV(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> commandList, D3D12_CPU_DESCRIPTOR_HANDLE rtv, float* clearColor)
 {
     commandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
 }
 
-void CubeDemo::ClearDepth(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> commandList, D3D12_CPU_DESCRIPTOR_HANDLE dsv, float depth)
+void ModelDemo::ClearDepth(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> commandList, D3D12_CPU_DESCRIPTOR_HANDLE dsv, float depth)
 {
     commandList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
 }
