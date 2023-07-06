@@ -14,3 +14,9 @@ struct Attributes
 {
   float2 bary;
 };
+
+struct VertexAttributes
+{
+    float3 position;
+    float2 uv;
+};

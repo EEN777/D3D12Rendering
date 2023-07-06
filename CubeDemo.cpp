@@ -74,6 +74,10 @@ ComPtr<ID3D12RootSignature> CubeDemo::CreateHitSignature()
     rsc.AddRootParameter(D3D12_ROOT_PARAMETER_TYPE_SRV, 0);
     rsc.AddRootParameter(D3D12_ROOT_PARAMETER_TYPE_SRV, 1);
 
+    rsc.AddHeapRangesParameter({
+        {2, 1, 0, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0}  // SRV for the texture
+    });
+
     return rsc.Generate(Application::Get().GetDevice().Get(), true);
 }
 
@@ -151,13 +155,12 @@ void CubeDemo::CreateShaderResourceHeap()
 
     srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
+    //Acceleration Stucture.
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
     srvDesc.Format = DXGI_FORMAT_UNKNOWN;
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     srvDesc.RaytracingAccelerationStructure.Location = m_topLevelASBuffers.result->GetGPUVirtualAddress();
-
-
     device->CreateShaderResourceView(nullptr, &srvDesc, srvHandle);
     srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
@@ -174,7 +177,6 @@ void CubeDemo::CreateShaderResourceHeap()
     srvDescTex.Texture2D.MostDetailedMip = 0;
     srvDescTex.Texture2D.ResourceMinLODClamp = 0.0f;
     srvDescTex.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
     device->CreateShaderResourceView(_textureResource.Get(), &srvDescTex, srvHandle);
 
     //D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc = {};
@@ -500,7 +502,7 @@ bool CubeDemo::LoadContent()
     auto fwd = Library::Vector3Helper::Forward;
     auto up = Library::Vector3Helper::Up;
     auto right = Library::Vector3Helper::Right;
-    auto pos = XMFLOAT3{-5.0f, -5.0f, -5.0f};
+    auto pos = XMFLOAT3{ -15.0f, -15.0f, -15.0f };
 
     XMMATRIX worldMatrix = XMMatrixIdentity();
     Library::MatrixHelper::SetForward(worldMatrix, fwd);
@@ -509,8 +511,8 @@ bool CubeDemo::LoadContent()
     Library::MatrixHelper::SetTranslation(worldMatrix, pos);
 
     AccelerationStructureBuffers bottomLevelBuffers = CreateBottomLevelAS({ {_vertexBuffer.Get(), vertexAndColorVector.size()}}, {{_indexBuffer.Get(), meshIndices.size()}}, commandList.Get());
-    //m_bottomLevelASInstances = { { bottomLevelBuffers.result, XMMatrixIdentity() },  { bottomLevelBuffers.result, worldMatrix } }; Doing this adds more than one.
-    m_bottomLevelASInstances = { { bottomLevelBuffers.result, XMMatrixIdentity() }};
+    m_bottomLevelASInstances = { { bottomLevelBuffers.result, XMMatrixIdentity() },  { bottomLevelBuffers.result, worldMatrix } };// Doing this adds more than one.
+    //m_bottomLevelASInstances = { { bottomLevelBuffers.result, XMMatrixIdentity() }};
     CreateTopLevelAS(m_bottomLevelASInstances, commandList.Get());
 
     fenceValue = commandQueue2->ExecuteCommandList(commandList);
@@ -588,7 +590,7 @@ void CubeDemo::OnRender(RenderEventArgs& args)
     auto fwd = Library::Vector3Helper::Forward;
     auto up = Library::Vector3Helper::Up;
     auto right = Library::Vector3Helper::Right;
-    auto pos = XMFLOAT3{-5.0f, -5.0f, -5.0f };//Library::Vector3Helper::Zero;
+    auto pos = XMFLOAT3{-15.0f, -15.0f, -15.0f };//Library::Vector3Helper::Zero;
 
     XMMATRIX worldMatrix = XMMatrixIdentity();
     Library::MatrixHelper::SetForward(worldMatrix, fwd);

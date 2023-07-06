@@ -299,5 +299,11 @@
     <CopyFileToFolders Include="Content\earthmap.jpg">
       <Filter>Content</Filter>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\GB.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\GB_Texture.DDS">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>

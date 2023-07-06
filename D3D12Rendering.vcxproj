@@ -316,6 +316,10 @@
       <FileType>Document</FileType>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\GB.model">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
     <None Include="dxcompiler.dll" />
     <None Include="dxil.dll" />
     <None Include="VectorHelper.inl" />
@@ -332,6 +336,11 @@
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="Content\earthmap.jpg">
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="Content\GB_Texture.DDS">
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
     </CopyFileToFolders>
   </ItemGroup>
