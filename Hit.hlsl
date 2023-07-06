@@ -21,7 +21,7 @@ void ClosestHit(inout HitInfo payload, Attributes attrib)
 		BTriVertex[indices[startIndex + 1]].TexCoord * barycentrics.y +
 		BTriVertex[indices[startIndex + 2]].TexCoord * barycentrics.z;
     
-    //float3 color = texture.Load(int3(0, 0, 0).rgb);
+   // hitColor = texture.Load(int3(0, 0, 0));
 
     payload.colorAndDistance = float4(hitColor, RayTCurrent());
 }

@@ -210,11 +210,15 @@ void CubeDemo::CreateShaderBindingTable()
     m_sbtHelper.Reset();
     D3D12_GPU_DESCRIPTOR_HANDLE srvUavHeapHandle = m_srvUavHeap->GetGPUDescriptorHandleForHeapStart();
 
+    D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle = srvUavHeapHandle;
+    textureSrvHandle.ptr = srvUavHeapHandle.ptr + (3 * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+
     auto heapPointer = reinterpret_cast<uint64_t*>(srvUavHeapHandle.ptr);
+    auto texPointer = reinterpret_cast<uint64_t*>(textureSrvHandle.ptr);
     m_sbtHelper.AddRayGenerationProgram(L"RayGen", { heapPointer });
     m_sbtHelper.AddMissProgram(L"Miss", {});
-    m_sbtHelper.AddHitGroup(L"HitGroup", { {(void*)(_vertexBuffer->GetGPUVirtualAddress()), (void*)(_indexBuffer->GetGPUVirtualAddress())}});
-    m_sbtHelper.AddHitGroup(L"TestHitGroup", { {(void*)(_vertexBuffer->GetGPUVirtualAddress()), (void*)(_indexBuffer->GetGPUVirtualAddress())}});
+    m_sbtHelper.AddHitGroup(L"HitGroup", { {(void*)(_vertexBuffer->GetGPUVirtualAddress()), (void*)(_indexBuffer->GetGPUVirtualAddress()), texPointer}});
+    m_sbtHelper.AddHitGroup(L"TestHitGroup", { {(void*)(_vertexBuffer->GetGPUVirtualAddress()), (void*)(_indexBuffer->GetGPUVirtualAddress()), texPointer}});
 
     const uint32_t sbtSize = m_sbtHelper.ComputeSBTSize();
     m_sbtStorage = nv_helpers_dx12::CreateBuffer(device, sbtSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, nv_helpers_dx12::kUploadHeapProps);
@@ -429,7 +433,6 @@ bool CubeDemo::LoadContent()
     CD3DX12_DESCRIPTOR_RANGE1 descriptorRangeSampler;
     descriptorRangeSampler.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
 
-
     CD3DX12_ROOT_DESCRIPTOR_TABLE1 descriptorTableSampler;
     descriptorTableSampler.Init(1, &descriptorRangeSampler);
 
@@ -452,8 +455,12 @@ bool CubeDemo::LoadContent()
     CD3DX12_DESCRIPTOR_RANGE range;
     range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
 
-    CD3DX12_ROOT_PARAMETER rtParameters[1];
+    CD3DX12_DESCRIPTOR_RANGE rtRange;
+    rtRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);
+
+    CD3DX12_ROOT_PARAMETER rtParameters[2];
     rtParameters[0].InitAsDescriptorTable(1, &range, D3D12_SHADER_VISIBILITY_ALL);
+    rtParameters[1].InitAsDescriptorTable(1, &rtRange, D3D12_SHADER_VISIBILITY_ALL);
 
 
     CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
