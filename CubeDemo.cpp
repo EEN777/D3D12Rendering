@@ -29,36 +29,9 @@
 
 #include <algorithm>
 
+#include "CommonStructures.h"
+
 using namespace DirectX;
-
-struct VertexPosColor
-{
-	XMFLOAT3 Position;
-	XMFLOAT3 Color;
-};
-
-
-static VertexPosColor vertices[8]
-{
-    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
-    { XMFLOAT3(-1.0f,  1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) }, 
-    { XMFLOAT3(1.0f,  1.0f, -1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) }, 
-    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) }, 
-    { XMFLOAT3(-1.0f, -1.0f,  1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) }, 
-    { XMFLOAT3(-1.0f,  1.0f,  1.0f), XMFLOAT3(0.0f, 1.0f, 1.0f) },
-    { XMFLOAT3(1.0f,  1.0f,  1.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-    { XMFLOAT3(1.0f, -1.0f,  1.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) }
-};
-
-static uint32_t indices[36]
-{
-    0,1,2,0,2,3,
-    4,6,5,4,7,6,
-    4,5,1,4,1,0,
-    3,2,6,3,6,7,
-    1,5,6,1,6,2,
-    4,0,3,4,3,7
-};
 
 ComPtr<ID3D12RootSignature> CubeDemo::CreateRayGenSignature()
 {
@@ -76,6 +49,14 @@ ComPtr<ID3D12RootSignature> CubeDemo::CreateHitSignature()
 
     rsc.AddHeapRangesParameter({
         {2, 1, 0, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0}  // SRV for the texture
+    });
+
+    rsc.AddHeapRangesParameter({
+    {3, 1, 0, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 0}  // CBV for Vertices.
+    });
+
+    rsc.AddHeapRangesParameter({
+    {4, 1, 0, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 0}  // CBV for Indices.
     });
 
     return rsc.Generate(Application::Get().GetDevice().Get(), true);
@@ -107,12 +88,10 @@ void CubeDemo::CreateRayTracingPipeline()
     m_hitSignature = CreateHitSignature();
 
     pipeline.AddHitGroup(L"HitGroup", L"ClosestHit");
-    pipeline.AddHitGroup(L"TestHitGroup", L"ClosestHit");
 
     pipeline.AddRootSignatureAssociation(m_rayGenSignature.Get(), { L"RayGen" });
     pipeline.AddRootSignatureAssociation(m_missSignature.Get(), { L"Miss" });
     pipeline.AddRootSignatureAssociation(m_hitSignature.Get(), { L"HitGroup" });
-    pipeline.AddRootSignatureAssociation(m_hitSignature.Get(), { L"TestHitGroup" });
 
     pipeline.SetMaxPayloadSize(4 * sizeof(float));
     pipeline.SetMaxAttributeSize(2 * sizeof(float));
@@ -145,7 +124,9 @@ void CubeDemo::CreateShaderResourceHeap()
 {
     auto device = Application::Get().GetDevice().Get();
 
-    m_srvUavHeap = nv_helpers_dx12::CreateDescriptorHeap(device, 4, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true);
+    uint32_t heapCount = 3 + (_gameObjects.size() * (3)); // _gamObjects.size() multiplied by 3 for Texture, VertexBuffer, and IndexBuffer.
+
+    m_srvUavHeap = nv_helpers_dx12::CreateDescriptorHeap(device, heapCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true);
 
     D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = m_srvUavHeap->GetCPUDescriptorHandleForHeapStart();
 
@@ -170,39 +151,59 @@ void CubeDemo::CreateShaderResourceHeap()
     device->CreateConstantBufferView(&cbvDesc, srvHandle);
     srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
+    //D3D12_CONSTANT_BUFFER_VIEW_DESC 
+
+
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDescTex = {};
-    srvDescTex.Format = _textureResource->GetDesc().Format;
     srvDescTex.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
     srvDescTex.Texture2D.MipLevels = 1; // Only one level of detail
     srvDescTex.Texture2D.MostDetailedMip = 0;
     srvDescTex.Texture2D.ResourceMinLODClamp = 0.0f;
     srvDescTex.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    device->CreateShaderResourceView(_textureResource.Get(), &srvDescTex, srvHandle);
 
-    //D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc = {};
-    //samplerHeapDesc.NumDescriptors = 1;
-    //samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-    //samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    //ID3D12DescriptorHeap* samplerDescriptorHeap;
-    //device->CreateDescriptorHeap(&samplerHeapDesc, IID_PPV_ARGS(&samplerDescriptorHeap));
+    for (auto& object : _gameObjects)
+    {
+        srvDescTex.Format = object->TextureResource()->GetDesc().Format;
+        device->CreateShaderResourceView(object->TextureResource().Get(), &srvDescTex, srvHandle);
+        srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    }
 
-    //D3D12_SAMPLER_DESC samplerDesc = {};
-    //samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-    //samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    //samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    //samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    //samplerDesc.MipLODBias = 0;
-    //samplerDesc.MaxAnisotropy = 1;
-    //samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-    //samplerDesc.BorderColor[0] = 1.0f;
-    //samplerDesc.BorderColor[1] = 1.0f;
-    //samplerDesc.BorderColor[2] = 1.0f;
-    //samplerDesc.BorderColor[3] = 1.0f;
-    //samplerDesc.MinLOD = 0;
-    //samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+    D3D12_SHADER_RESOURCE_VIEW_DESC vertDesc = {};
+    vertDesc.Format = DXGI_FORMAT_UNKNOWN;
+    vertDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    vertDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    vertDesc.Buffer.FirstElement = 0;
+    vertDesc.Buffer.NumElements = _gameObjects[0]->VertexBufferView().SizeInBytes / sizeof(VertexPosColor);
+    vertDesc.Buffer.StructureByteStride = sizeof(VertexPosColor);
+    vertDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-    //device->CreateSampler(&samplerDesc, samplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+    device->CreateShaderResourceView(_gameObjects[0]->VertexBuffer().Get(), &vertDesc, srvHandle);
 
+    srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC indexDesc = {};
+    indexDesc.Format = DXGI_FORMAT_UNKNOWN;
+    indexDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    indexDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    indexDesc.Buffer.FirstElement = 0;
+    indexDesc.Buffer.NumElements = _gameObjects[0]->IndexBufferView().SizeInBytes / sizeof(UINT);
+    indexDesc.Buffer.StructureByteStride = sizeof(UINT);
+    indexDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+
+    device->CreateShaderResourceView(_gameObjects[0]->IndexBuffer().Get(), &indexDesc, srvHandle);
+
+
+    ////D3D12_CONSTANT_BUFFER_VIEW_DESC vertDesc{};
+    //cbvDesc.BufferLocation = _gameObjects[0]->VertexBuffer()->GetGPUVirtualAddress();
+    //cbvDesc.SizeInBytes = _gameObjects[0]->VertexBufferView().SizeInBytes;
+    //device->CreateConstantBufferView(&cbvDesc, srvHandle);
+    //srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+    ////D3D12_CONSTANT_BUFFER_VIEW_DESC indexDesc{};
+    //cbvDesc.BufferLocation = _gameObjects[0]->IndexBuffer()->GetGPUVirtualAddress();
+    //cbvDesc.SizeInBytes = _gameObjects[0]->IndexBufferView().SizeInBytes;
+    //device->CreateConstantBufferView(&cbvDesc, srvHandle);
+    //srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
 void CubeDemo::CreateShaderBindingTable()
@@ -213,14 +214,23 @@ void CubeDemo::CreateShaderBindingTable()
     D3D12_GPU_DESCRIPTOR_HANDLE srvUavHeapHandle = m_srvUavHeap->GetGPUDescriptorHandleForHeapStart();
 
     D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle = srvUavHeapHandle;
-    textureSrvHandle.ptr = srvUavHeapHandle.ptr + (3 * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+    textureSrvHandle.ptr = srvUavHeapHandle.ptr + (UINT{ 3 } *device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+
+    D3D12_GPU_DESCRIPTOR_HANDLE vertexSrvHandle = textureSrvHandle;
+    vertexSrvHandle.ptr = textureSrvHandle.ptr + (device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+
+    D3D12_GPU_DESCRIPTOR_HANDLE indexSrvHandle = vertexSrvHandle;
+    indexSrvHandle.ptr = vertexSrvHandle.ptr + (device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+
+
 
     auto heapPointer = reinterpret_cast<uint64_t*>(srvUavHeapHandle.ptr);
     auto texPointer = reinterpret_cast<uint64_t*>(textureSrvHandle.ptr);
+    auto vertexPointer = reinterpret_cast<uint64_t*>(vertexSrvHandle.ptr);
+    auto indexPointer = reinterpret_cast<uint64_t*>(indexSrvHandle.ptr);
     m_sbtHelper.AddRayGenerationProgram(L"RayGen", { heapPointer });
     m_sbtHelper.AddMissProgram(L"Miss", {});
-    m_sbtHelper.AddHitGroup(L"HitGroup", { {(void*)(_vertexBuffer->GetGPUVirtualAddress()), (void*)(_indexBuffer->GetGPUVirtualAddress()), texPointer}});
-    m_sbtHelper.AddHitGroup(L"TestHitGroup", { {(void*)(_vertexBuffer->GetGPUVirtualAddress()), (void*)(_indexBuffer->GetGPUVirtualAddress()), texPointer}});
+    m_sbtHelper.AddHitGroup(L"HitGroup", { {(void*)(_gameObjects[0]->VertexBuffer()->GetGPUVirtualAddress()), (void*)(_gameObjects[0]->IndexBuffer()->GetGPUVirtualAddress()), texPointer, vertexPointer}});
 
     const uint32_t sbtSize = m_sbtHelper.ComputeSBTSize();
     m_sbtStorage = nv_helpers_dx12::CreateBuffer(device, sbtSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, nv_helpers_dx12::kUploadHeapProps);
@@ -286,30 +296,41 @@ CubeDemo::CubeDemo(const std::wstring& name, int width, int height, bool vSync) 
 }
 
 bool CubeDemo::LoadContent()
-{
-    
-   // const auto model = mGame->Content().Load<Model>(Utility::ToWideString(mModelFileName));
-    //_contentManager.Initialize();
-    
+{    
     // Loading model here
     Library::ContentTypeReaderManager::Initialize();
 
-    const auto model = _contentManager.Load<Library::Model>(L"Sphere.obj.bin");
-    Library::Mesh* mesh = model->Meshes().at(0).get();
+    //for (std::size_t index{ 0 }; index < model->Meshes().size(); ++index)
+    //{
+    //    Library::Mesh* currentMesh = model->Meshes().at(index).get();
+    //    auto& currentVector = currentMesh->Vertices();
+    //    std::vector<DirectX::XMFLOAT3>* currentTexCoords{ nullptr};
+    //    if (currentMesh->TextureCoordinates().size() > 0)
+    //    {
+    //        currentTexCoords = const_cast<std::vector<DirectX::XMFLOAT3>*>(&(currentMesh->TextureCoordinates().at(0)));
+    //    }
 
-    auto vertexVector = mesh->Vertices();
-    auto texCoordVector = mesh->TextureCoordinates().at(0);
-    std::vector<DirectX::XMFLOAT3> vertexAndColorVector;
+    //    std::size_t currentPosition{ 0 };
+    //    for (auto& vert : currentVector)
+    //    {
+    //        vertexAndColorVector.push_back(vert);
+    //        if (currentTexCoords != nullptr)
+    //        {
+    //            vertexAndColorVector.push_back(currentTexCoords->at(currentPosition));
+    //        }
+    //        else
+    //        {
+    //            vertexAndColorVector.push_back(XMFLOAT3{});
+    //        }
+    //        ++currentPosition;
+    //    }
 
-    std::size_t currentPosition{ 0 };
-    for (auto& vert : vertexVector)
-    {
-        vertexAndColorVector.push_back(vert);
-        vertexAndColorVector.push_back(texCoordVector.at(currentPosition));
-        ++currentPosition;
-    }
+    //    for (auto& i : currentMesh->Indices())
+    //    {
+    //        meshIndices.push_back(i);
+    //    }
+    //}
 
-    std::vector<UINT> meshIndices = mesh->Indices();
 
 
     //Check Raytracing feature support.
@@ -328,23 +349,16 @@ bool CubeDemo::LoadContent()
     auto commandQueue = Application::Get().GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
     auto commandList = commandQueue->GetCommandList();
 
-    ComPtr<ID3D12Resource> intermediateVertexBuffer;
-    UpdateBufferResource(commandList.Get(),
-        &_vertexBuffer, &intermediateVertexBuffer, vertexAndColorVector.size(), sizeof(VertexPosColor), vertexAndColorVector.data());
+    _gameObjects = {
+        { std::make_shared<GameObject>(L"CompositeTest.model", L"Content/GB_TextureDownRes.dds", _contentManager) },
+        { std::make_shared<GameObject>(L"Sphere.obj.bin", L"Content/EarthComposite.dds", _contentManager) }
+    };
 
-    _vertexBufferView.BufferLocation = _vertexBuffer->GetGPUVirtualAddress();
-    _vertexBufferView.SizeInBytes = sizeof(XMFLOAT3) * static_cast<UINT>(vertexAndColorVector.size());
-    _vertexBufferView.StrideInBytes = sizeof(VertexPosColor);
-
-    ComPtr<ID3D12Resource> intermediateIndexBuffer;
-    UpdateBufferResource(commandList.Get(), &_indexBuffer, &intermediateIndexBuffer,
-        meshIndices.size(), sizeof(uint32_t), meshIndices.data());
-
-    _indexBufferView.BufferLocation = _indexBuffer->GetGPUVirtualAddress();
-    _indexBufferView.Format = DXGI_FORMAT_R32_UINT;
-    _indexBufferView.SizeInBytes = static_cast<UINT>(meshIndices.size()) * sizeof(UINT);
-
-    indexCount = static_cast<UINT>(meshIndices.size());
+    for (auto& object : _gameObjects)
+    {
+        object->Initialize(commandList, _camera);
+        object->UpdateObject();
+    }
 
     D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc{};
     dsvHeapDesc.NumDescriptors = 1;
@@ -386,26 +400,6 @@ bool CubeDemo::LoadContent()
     ThrowIfFailedI(device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(_texDescriptorHeap.GetAddressOf())));
 
     CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(_texDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-
-    auto textureCommandList = commandQueue->GetCommandList();
-
-    ThrowIfFailedI(DirectX::CreateDDSTextureFromFile12(device.Get(),
-        textureCommandList.Get(), L"Content/EarthComposite.dds",
-        _textureResource, _textureUploadResource));
-
-    auto textureFenceValue = commandQueue->ExecuteCommandList(textureCommandList);
-    commandQueue->WaitForFenceValue(textureFenceValue);
-
-    // Need to load texture first.
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Format = _textureResource->GetDesc().Format;
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MipLevels = 1; // Only one level of detail
-    srvDesc.Texture2D.MostDetailedMip = 0;
-    srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-    device->CreateShaderResourceView(_textureResource.Get(), &srvDesc, hDescriptor);
 
     D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc = {};
     samplerHeapDesc.NumDescriptors = 1;
@@ -510,15 +504,18 @@ bool CubeDemo::LoadContent()
     Library::MatrixHelper::SetRight(worldMatrix, right);
     Library::MatrixHelper::SetTranslation(worldMatrix, pos);
 
-    AccelerationStructureBuffers bottomLevelBuffers = CreateBottomLevelAS({ {_vertexBuffer.Get(), vertexAndColorVector.size()}}, {{_indexBuffer.Get(), meshIndices.size()}}, commandList.Get());
-    m_bottomLevelASInstances = { { bottomLevelBuffers.result, XMMatrixIdentity() },  { bottomLevelBuffers.result, worldMatrix } };// Doing this adds more than one.
-    //m_bottomLevelASInstances = { { bottomLevelBuffers.result, XMMatrixIdentity() }};
+    std::vector<AccelerationStructureBuffers> bottomLevelBuffers;
+
+    for (auto& object : _gameObjects)
+    {
+        bottomLevelBuffers.emplace_back(CreateBottomLevelAS({ { object->VertexBuffer().Get(), object->VertCount() } }, { {object->IndexBuffer().Get(), object->IndexCount()} }, commandList.Get()));
+        m_bottomLevelASInstances.push_back({ bottomLevelBuffers[bottomLevelBuffers.size() - 1].result, XMMatrixIdentity()});
+    }
+
     CreateTopLevelAS(m_bottomLevelASInstances, commandList.Get());
 
     fenceValue = commandQueue2->ExecuteCommandList(commandList);
     commandQueue2->WaitForFenceValue(fenceValue);
-
-    m_bottomLevelAS = bottomLevelBuffers.result;
 
     CreateRayTracingPipeline();
     CreateRaytracingOutputBuffer();
@@ -564,9 +561,10 @@ void CubeDemo::OnUpdate(UpdateEventArgs& args)
         totalTime = 0.0;
     }
 
-    float angle = static_cast<float>(args.TotalTime * 0);
-    const XMVECTOR rotationAxis = XMVectorSet(0, 1, 1, 0);
-    _modelMatrix = XMMatrixRotationAxis(rotationAxis, XMConvertToRadians(angle));
+    for (auto& object : _gameObjects)
+    {
+        object->UpdateObject();
+    }
 }
 
 void CubeDemo::OnRender(RenderEventArgs& args)
@@ -586,58 +584,28 @@ void CubeDemo::OnRender(RenderEventArgs& args)
             D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
     }
 
-
-    auto fwd = Library::Vector3Helper::Forward;
-    auto up = Library::Vector3Helper::Up;
-    auto right = Library::Vector3Helper::Right;
-    auto pos = XMFLOAT3{-15.0f, -15.0f, -15.0f };//Library::Vector3Helper::Zero;
-
-    XMMATRIX worldMatrix = XMMatrixIdentity();
-    Library::MatrixHelper::SetForward(worldMatrix, fwd);
-    Library::MatrixHelper::SetUp(worldMatrix, up);
-    Library::MatrixHelper::SetRight(worldMatrix, right);
-    Library::MatrixHelper::SetTranslation(worldMatrix, pos);
-
-    XMFLOAT4X4 temp;
-    XMStoreFloat4x4(&temp, XMMatrixScaling(1.0f, 1.0f, 1.0f) * worldMatrix);
-
-    //_modelMatrix = XMLoadFloat4x4(&temp);
-    worldMatrix = XMLoadFloat4x4(&temp);
-
-    XMMATRIX mvpMatrix = XMMatrixMultiply(_modelMatrix, _camera->ViewProjectionMatrix());
-    XMMATRIX mvpMatrix2 = XMMatrixMultiply(worldMatrix, _camera->ViewProjectionMatrix());
-
-
     commandList->SetGraphicsRootSignature(_rootSignature.Get());
-    commandList->IASetIndexBuffer(&_indexBufferView);
     commandList->RSSetViewports(1, &_viewport);
     commandList->RSSetScissorRects(1, &_scissorRect);
     commandList->OMSetRenderTargets(1, &rtv, false, &dsv);
 
+
     if (_isRaster)
     {
-        commandList->SetPipelineState(_pipelineState.Get());
-        commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        commandList->IASetVertexBuffers(0, 1, &_vertexBufferView);
-        commandList->SetGraphicsRoot32BitConstants(0, sizeof(XMMATRIX) / 4, &mvpMatrix, 0);
-
-        ID3D12DescriptorHeap* ppHeaps[] = { _texDescriptorHeap.Get() };
-        commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-
-        commandList->SetGraphicsRootDescriptorTable(1, _texDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-
         FLOAT clearColor[]{ 0.4f, 0.6f, 0.9f, 1.0f };
         ClearRTV(commandList, rtv, clearColor);
         ClearDepth(commandList, dsv);
-        commandList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
-        commandList->SetGraphicsRoot32BitConstants(0, sizeof(XMMATRIX) / 4, &mvpMatrix2, 0);
-        commandList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
+
+        commandList->SetPipelineState(_pipelineState.Get());
+        for (auto& object : _gameObjects)
+        {
+            object->DrawObject(commandList);
+        }
     }
 
     else
     {
         commandList->SetGraphicsRootSignature(_rtRootSignature.Get());
-        //commandList->SetGraphicsRootDescriptorTable(1, _texDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
         std::vector<ID3D12DescriptorHeap*> heaps{ m_srvUavHeap.Get() };
         commandList->SetDescriptorHeaps(static_cast<UINT>(heaps.size()), heaps.data());
@@ -659,8 +627,8 @@ void CubeDemo::OnRender(RenderEventArgs& args)
         desc.HitGroupTable.SizeInBytes = hitGroupsSectionSize;
         desc.HitGroupTable.StrideInBytes = m_sbtHelper.GetHitGroupEntrySize();
 
-        desc.Width = 1280;
-        desc.Height = 720;
+        desc.Width = _window->GetClientWidth();
+        desc.Height = _window->GetClientHeight();
         desc.Depth = 1;
 
         commandList->SetPipelineState1(m_rtStateObject.Get());

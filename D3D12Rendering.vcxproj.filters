@@ -87,6 +87,7 @@
     <ClCompile Include="DDSTextureLoader.cpp">
       <Filter>Utility\ContentManager</Filter>
     </ClCompile>
+    <ClCompile Include="GameObject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -204,6 +205,7 @@
     <ClInclude Include="DDSTextureLoader.h">
       <Filter>Utility\ContentManager</Filter>
     </ClInclude>
+    <ClInclude Include="GameObject.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">
@@ -284,9 +286,6 @@
     <CopyFileToFolders Include="Content\beach_ball.model">
       <Filter>Content</Filter>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\Cece_Mesh.model">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
     <CopyFileToFolders Include="Content\Sphere.obj.bin">
       <Filter>Content</Filter>
     </CopyFileToFolders>
@@ -303,6 +302,27 @@
       <Filter>Content</Filter>
     </CopyFileToFolders>
     <CopyFileToFolders Include="Content\GB_Texture.DDS">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\GB_TextureDownRes.dds">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\TestSphere.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\sibenik.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\head.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\CB.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\basaltColumns.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\CompositeTest.model">
       <Filter>Content</Filter>
     </CopyFileToFolders>
   </ItemGroup>

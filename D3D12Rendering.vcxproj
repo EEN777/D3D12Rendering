@@ -153,6 +153,7 @@
     <ClCompile Include="DDSTextureLoader.cpp" />
     <ClCompile Include="FirstPersonCamera.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="HighResolutionClock.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MatrixHelper.cpp" />
@@ -187,6 +188,7 @@
     <ClInclude Include="Defines.h" />
     <ClInclude Include="DXRHelper.h" />
     <ClInclude Include="DXSampleHelper.h" />
+    <ClInclude Include="GameObject.h" />
     <ClInclude Include="Events.h" />
     <ClInclude Include="FirstPersonCamera.h" />
     <ClInclude Include="Game.h" />
@@ -308,10 +310,6 @@
       <FileType>Document</FileType>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\Cece_Mesh.model">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
-    </CopyFileToFolders>
     <CopyFileToFolders Include="Content\Sphere.obj.bin">
       <FileType>Document</FileType>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
@@ -319,6 +317,36 @@
     <CopyFileToFolders Include="Content\GB.model">
       <FileType>Document</FileType>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\TestSphere.model">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\sibenik.model">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\head.model">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\CB.model">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\basaltColumns.model">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\CompositeTest.model">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
     </CopyFileToFolders>
     <None Include="dxcompiler.dll" />
     <None Include="dxil.dll" />
@@ -342,6 +370,12 @@
   <ItemGroup>
     <CopyFileToFolders Include="Content\GB_Texture.DDS">
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="Content\GB_TextureDownRes.dds">
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
     </CopyFileToFolders>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

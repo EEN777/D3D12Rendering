@@ -4,9 +4,8 @@
 #include "FirstPersonCamera.h"
 #include <DirectXMath.h>
 #include "TextureLoader.h"
-
 #include "ContentManager.h"
-
+#include "GameObject.h"
 #include <dxcapi.h>
 #include "nv_helpers_dx12/TopLevelASGenerator.h"
 #include "nv_helpers_dx12/ShaderBindingTableGenerator.h"
@@ -14,11 +13,11 @@
 class CubeDemo : public Game
 {
 	uint64_t _fenceValues[Window::BufferCount]{};
-	Microsoft::WRL::ComPtr<ID3D12Resource> _vertexBuffer;
-	D3D12_VERTEX_BUFFER_VIEW _vertexBufferView;
+	//Microsoft::WRL::ComPtr<ID3D12Resource> _vertexBuffer;
+	//D3D12_VERTEX_BUFFER_VIEW _vertexBufferView;
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> _indexBuffer;
-	D3D12_INDEX_BUFFER_VIEW _indexBufferView;
+	//Microsoft::WRL::ComPtr<ID3D12Resource> _indexBuffer;
+	//D3D12_INDEX_BUFFER_VIEW _indexBufferView;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> _depthBuffer;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> _DSVHeap;
@@ -31,6 +30,10 @@ class CubeDemo : public Game
 
 	D3D12_VIEWPORT _viewport;
 	D3D12_RECT _scissorRect;
+
+	std::vector<std::shared_ptr<GameObject>> _gameObjects;
+	std::shared_ptr<GameObject> gameObject;
+	std::shared_ptr<GameObject> gameObject2;
 
 	float _fieldOfView;
 

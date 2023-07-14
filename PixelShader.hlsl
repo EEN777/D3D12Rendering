@@ -5,7 +5,7 @@ struct PixelShaderInput
 {
     float4 Position : SV_Position;
     float2 TextureCoordinate : TEXCOORD;
-};
+};                    
 
 float4 main( PixelShaderInput IN ) : SV_TARGET
 {
