@@ -30,7 +30,8 @@ VertexAttributes GetVertexAttributes(uint triangleIndex, float3 barycentrics)
     {
         STriVertex vertexData = verticesTest[0][indices[i]];
         v.position += vertexData.vertex * barycentrics[i];
-        v.uv += vertexData.TexCoord * barycentrics[i];
+        float2 proxy = (vertexData.TexCoord.x, vertexData.TexCoord.y);
+        v.uv += proxy * barycentrics[i];
     }
 
     return v;
