@@ -29,6 +29,8 @@ class GameObject
 	UINT _indexCount;
 	UINT _vertexCount;
 
+	std::size_t _modelIndex;
+
 	DirectX::XMMATRIX _modelMatrix;
 	DirectX::XMMATRIX _mvpMatrix;
 
@@ -41,7 +43,7 @@ class GameObject
 	void UpdateBufferResource(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> commandList, ID3D12Resource** destinationResource, ID3D12Resource** intermediateResource, std::size_t numElements, std::size_t elementSize, const void* bufferData, D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
 
 public:
-	GameObject(std::wstring modelFile, std::wstring textureFile, Library::ContentManager& contentManager);
+	GameObject(std::wstring modelFile, std::wstring textureFile, Library::ContentManager& contentManager, std::size_t modelIndex = 0);
 	~GameObject() = default;
 
 	void Initialize(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> commandList, std::shared_ptr<FirstPersonCamera> camera);

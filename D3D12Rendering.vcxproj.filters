@@ -16,7 +16,7 @@
       <Filter>Helpers</Filter>
     </ClCompile>
     <ClCompile Include="CubeDemo.cpp">
-      <Filter>CubeDemo</Filter>
+      <Filter>Content\CubeDemo</Filter>
     </ClCompile>
     <ClCompile Include="ContentManager.cpp">
       <Filter>Utility\ContentManager</Filter>
@@ -104,7 +104,7 @@
       <Filter>Helpers</Filter>
     </ClInclude>
     <ClInclude Include="CubeDemo.h">
-      <Filter>CubeDemo</Filter>
+      <Filter>Content\CubeDemo</Filter>
     </ClInclude>
     <ClInclude Include="CommonStructures.h">
       <Filter>Helpers</Filter>
@@ -223,9 +223,6 @@
     <Filter Include="ModelDemo">
       <UniqueIdentifier>{f7988d73-f945-4267-a47c-a2c595662ddc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="CubeDemo">
-      <UniqueIdentifier>{d935544b-256c-480b-8231-ae99fbc3234b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Utility\ContentManager">
       <UniqueIdentifier>{77877c53-86ad-4e8f-b462-69a5ac4dbf52}</UniqueIdentifier>
     </Filter>
@@ -240,6 +237,9 @@
     </Filter>
     <Filter Include="Utility\Camera">
       <UniqueIdentifier>{aca7643d-980b-4628-85f0-226a4a60cf84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\CubeDemo">
+      <UniqueIdentifier>{d935544b-256c-480b-8231-ae99fbc3234b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -323,6 +323,33 @@
       <Filter>Content</Filter>
     </CopyFileToFolders>
     <CopyFileToFolders Include="Content\CompositeTest.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\BusterSword.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\BusterSword_ColorMap.dds">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\NeptuneColorMap.dds">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\dirt.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\Ground.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\PPPScene.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\BusterSwordPlaced.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\GBPlaced.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\GroundPlaced.model">
       <Filter>Content</Filter>
     </CopyFileToFolders>
   </ItemGroup>

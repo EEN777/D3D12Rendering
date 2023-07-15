@@ -44,19 +44,19 @@ ComPtr<ID3D12RootSignature> CubeDemo::CreateRayGenSignature()
 ComPtr<ID3D12RootSignature> CubeDemo::CreateHitSignature()
 {
     nv_helpers_dx12::RootSignatureGenerator rsc;
-    rsc.AddRootParameter(D3D12_ROOT_PARAMETER_TYPE_SRV, 0);
-    rsc.AddRootParameter(D3D12_ROOT_PARAMETER_TYPE_SRV, 1);
+    //rsc.AddRootParameter(D3D12_ROOT_PARAMETER_TYPE_SRV, 0);
+    //rsc.AddRootParameter(D3D12_ROOT_PARAMETER_TYPE_SRV, 1);
 
     rsc.AddHeapRangesParameter({
-        {2, 1, 0, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0}  // SRV for the texture
+        {2, 2, 0, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0}  // SRV for the texture
     });
 
     rsc.AddHeapRangesParameter({
-    {3, 1, 0, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 0}  // CBV for Vertices.
+    {0, 1, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0}  // SRV for Vertices.
     });
 
     rsc.AddHeapRangesParameter({
-    {4, 1, 0, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 0}  // CBV for Indices.
+    {0, 1 , 2, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0}  // CBV for Indices.
     });
 
     return rsc.Generate(Application::Get().GetDevice().Get(), true);
@@ -173,37 +173,32 @@ void CubeDemo::CreateShaderResourceHeap()
     vertDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
     vertDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     vertDesc.Buffer.FirstElement = 0;
-    vertDesc.Buffer.NumElements = _gameObjects[0]->VertexBufferView().SizeInBytes / sizeof(VertexPosColor);
-    vertDesc.Buffer.StructureByteStride = sizeof(VertexPosColor);
+    vertDesc.Buffer.StructureByteStride = sizeof(float);
     vertDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-    device->CreateShaderResourceView(_gameObjects[0]->VertexBuffer().Get(), &vertDesc, srvHandle);
+    for (auto& object : _gameObjects)
+    {
+        vertDesc.Buffer.NumElements = object->VertexBufferView().SizeInBytes / sizeof(float);
+        device->CreateShaderResourceView(object->VertexBuffer().Get(), &vertDesc, srvHandle);
+        srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    }
 
-    srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
 
     D3D12_SHADER_RESOURCE_VIEW_DESC indexDesc = {};
     indexDesc.Format = DXGI_FORMAT_UNKNOWN;
     indexDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
     indexDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     indexDesc.Buffer.FirstElement = 0;
-    indexDesc.Buffer.NumElements = _gameObjects[0]->IndexBufferView().SizeInBytes / sizeof(UINT);
     indexDesc.Buffer.StructureByteStride = sizeof(UINT);
-    indexDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+    indexDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;    
 
-    device->CreateShaderResourceView(_gameObjects[0]->IndexBuffer().Get(), &indexDesc, srvHandle);
-
-
-    ////D3D12_CONSTANT_BUFFER_VIEW_DESC vertDesc{};
-    //cbvDesc.BufferLocation = _gameObjects[0]->VertexBuffer()->GetGPUVirtualAddress();
-    //cbvDesc.SizeInBytes = _gameObjects[0]->VertexBufferView().SizeInBytes;
-    //device->CreateConstantBufferView(&cbvDesc, srvHandle);
-    //srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-    ////D3D12_CONSTANT_BUFFER_VIEW_DESC indexDesc{};
-    //cbvDesc.BufferLocation = _gameObjects[0]->IndexBuffer()->GetGPUVirtualAddress();
-    //cbvDesc.SizeInBytes = _gameObjects[0]->IndexBufferView().SizeInBytes;
-    //device->CreateConstantBufferView(&cbvDesc, srvHandle);
-    //srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    for (auto& object : _gameObjects)
+    {
+        indexDesc.Buffer.NumElements = object->IndexBufferView().SizeInBytes / sizeof(UINT);
+        device->CreateShaderResourceView(object->IndexBuffer().Get(), &indexDesc, srvHandle);
+        srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    }
 }
 
 void CubeDemo::CreateShaderBindingTable()
@@ -217,10 +212,10 @@ void CubeDemo::CreateShaderBindingTable()
     textureSrvHandle.ptr = srvUavHeapHandle.ptr + (UINT{ 3 } *device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 
     D3D12_GPU_DESCRIPTOR_HANDLE vertexSrvHandle = textureSrvHandle;
-    vertexSrvHandle.ptr = textureSrvHandle.ptr + (device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+    vertexSrvHandle.ptr = textureSrvHandle.ptr + (_gameObjects.size() * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 
     D3D12_GPU_DESCRIPTOR_HANDLE indexSrvHandle = vertexSrvHandle;
-    indexSrvHandle.ptr = vertexSrvHandle.ptr + (device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+    indexSrvHandle.ptr = vertexSrvHandle.ptr + (_gameObjects.size() * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 
 
 
@@ -230,7 +225,7 @@ void CubeDemo::CreateShaderBindingTable()
     auto indexPointer = reinterpret_cast<uint64_t*>(indexSrvHandle.ptr);
     m_sbtHelper.AddRayGenerationProgram(L"RayGen", { heapPointer });
     m_sbtHelper.AddMissProgram(L"Miss", {});
-    m_sbtHelper.AddHitGroup(L"HitGroup", { {(void*)(_gameObjects[0]->VertexBuffer()->GetGPUVirtualAddress()), (void*)(_gameObjects[0]->IndexBuffer()->GetGPUVirtualAddress()), texPointer, vertexPointer}});
+    m_sbtHelper.AddHitGroup(L"HitGroup", { {texPointer, vertexPointer, indexPointer, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}}); // Padding with nullptr as needed.
 
     const uint32_t sbtSize = m_sbtHelper.ComputeSBTSize();
     m_sbtStorage = nv_helpers_dx12::CreateBuffer(device, sbtSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, nv_helpers_dx12::kUploadHeapProps);
@@ -344,21 +339,29 @@ bool CubeDemo::LoadContent()
 
     _camera = std::make_shared<FirstPersonCamera>();
     _camera->Initialize();
-    _camera->SetPosition(0, 0, -35);
+    _camera->SetPosition(-125, 100, -500);
     auto device = Application::Get().GetDevice();
     auto commandQueue = Application::Get().GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
     auto commandList = commandQueue->GetCommandList();
 
     _gameObjects = {
-        { std::make_shared<GameObject>(L"CompositeTest.model", L"Content/GB_TextureDownRes.dds", _contentManager) },
-        { std::make_shared<GameObject>(L"Sphere.obj.bin", L"Content/EarthComposite.dds", _contentManager) }
+        { std::make_shared<GameObject>(L"GroundPlaced.model", L"Content/GB_TextureDownRes.dds", _contentManager, 0) },
+        { std::make_shared<GameObject>(L"GBPlaced.model", L"Content/GB_TextureDownRes.dds", _contentManager, 0) },
+        { std::make_shared<GameObject>(L"GBPlaced.model", L"Content/GB_TextureDownRes.dds", _contentManager, 1) },
+        { std::make_shared<GameObject>(L"GBPlaced.model", L"Content/GB_TextureDownRes.dds", _contentManager, 2) },
+        { std::make_shared<GameObject>(L"GBPlaced.model", L"Content/NeptuneColorMap.dds", _contentManager, 3) },
+        { std::make_shared<GameObject>(L"BusterSwordPlaced.model", L"Content/BusterSword_ColorMap.dds", _contentManager, 0) }
     };
+
 
     for (auto& object : _gameObjects)
     {
+        auto initCommandList = commandQueue->GetCommandList();
         object->Initialize(commandList, _camera);
-        object->UpdateObject();
+        auto initFenceValue = commandQueue->ExecuteCommandList(initCommandList);
+        commandQueue->WaitForFenceValue(initFenceValue);
     }
+
 
     D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc{};
     dsvHeapDesc.NumDescriptors = 1;
@@ -592,7 +595,7 @@ void CubeDemo::OnRender(RenderEventArgs& args)
 
     if (_isRaster)
     {
-        FLOAT clearColor[]{ 0.4f, 0.6f, 0.9f, 1.0f };
+        FLOAT clearColor[]{ 0.0f, 0.0f, 0.0f, 1.0f };
         ClearRTV(commandList, rtv, clearColor);
         ClearDepth(commandList, dsv);
 

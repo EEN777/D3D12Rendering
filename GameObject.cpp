@@ -37,8 +37,8 @@ void GameObject::UpdateBufferResource(Microsoft::WRL::ComPtr<ID3D12GraphicsComma
     }
 }
 
-GameObject::GameObject(std::wstring modelFile, std::wstring textureFile, Library::ContentManager& contentManager) :
-    _modelFile{ modelFile }, _textureFile{ textureFile }, _contentManager{ &contentManager }
+GameObject::GameObject(std::wstring modelFile, std::wstring textureFile, Library::ContentManager& contentManager, std::size_t modelIndex) :
+    _modelFile{ modelFile }, _textureFile{ textureFile }, _contentManager{ &contentManager }, _modelIndex{ modelIndex }
 {
 }
 
@@ -50,7 +50,9 @@ void GameObject::Initialize(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> /
     _camera = camera;
 
     const auto model = _contentManager->Load<Library::Model>(_modelFile);
-    Library::Mesh* mesh = model->Meshes().at(0).get();
+    Library::Mesh* mesh = model->Meshes().at(_modelIndex).get();
+
+    auto& t = model->Meshes();
 
 
     auto vertexVector = mesh->Vertices();
