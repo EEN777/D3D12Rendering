@@ -331,104 +331,33 @@
   <ItemGroup>
     <None Include="ContentManager.inl" />
     <None Include="ContentTypeReader.inl" />
-    <CopyFileToFolders Include="Content\Cube.model">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\beach_ball.model">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
-    </CopyFileToFolders>
     <CopyFileToFolders Include="Content\Sphere.obj.bin">
       <FileType>Document</FileType>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\GB.model">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\TestSphere.model">
+    <CopyFileToFolders Include="Content\BasaltColumnsFinalPlaced.model">
       <FileType>Document</FileType>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\sibenik.model">
+    <CopyFileToFolders Include="Content\BusterSwordFinalPlaced.model">
       <FileType>Document</FileType>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\head.model">
+    <CopyFileToFolders Include="Content\GBFinalPlaced.model">
       <FileType>Document</FileType>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\CB.model">
+    <CopyFileToFolders Include="Content\SandFinalPlaced.model">
       <FileType>Document</FileType>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\basaltColumns.model">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\CompositeTest.model">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\BusterSword.model">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\dirt.model">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\Ground.model">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\PPPScene.model">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\BusterSwordPlaced.model">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\GBPlaced.model">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\GroundPlaced.model">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
     </CopyFileToFolders>
     <None Include="dxcompiler.dll" />
     <None Include="dxil.dll" />
     <None Include="VectorHelper.inl" />
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="Content\TestFile.png">
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="Content\EarthComposite.dds">
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="Content\earthmap.jpg">
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
-    </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="Content\GB_Texture.DDS">
@@ -449,6 +378,18 @@
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="Content\NeptuneColorMap.dds">
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="Content\BasaltColumnColorMap.DDS">
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="Content\SandColorMap.DDS">
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)Content</DestinationFolders>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)Content</DestinationFolders>
     </CopyFileToFolders>

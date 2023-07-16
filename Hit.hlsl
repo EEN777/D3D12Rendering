@@ -49,7 +49,7 @@ VertexAttributes GetVertexAttributes(uint triangleIndex, float3 barycentrics)
 [shader("closesthit")] 
 void ClosestHit(inout HitInfo payload, Attributes attrib)
 {
-    if (InstanceID() < 5)
+    if (InstanceID() < 7)
     {
         uint triangleIndex = PrimitiveIndex();
         float3 barycentrics = float3((1.0f - attrib.bary.x - attrib.bary.y), attrib.bary.x, attrib.bary.y);

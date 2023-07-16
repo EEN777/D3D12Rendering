@@ -37,8 +37,8 @@ void GameObject::UpdateBufferResource(Microsoft::WRL::ComPtr<ID3D12GraphicsComma
     }
 }
 
-GameObject::GameObject(std::wstring modelFile, std::wstring textureFile, Library::ContentManager& contentManager, std::size_t modelIndex) :
-    _modelFile{ modelFile }, _textureFile{ textureFile }, _contentManager{ &contentManager }, _modelIndex{ modelIndex }
+GameObject::GameObject(std::wstring modelFile, std::wstring textureFile, Library::ContentManager& contentManager, std::size_t modelIndex, const std::wstring& meshName) :
+    _modelFile{ modelFile }, _textureFile{ textureFile }, _contentManager{ &contentManager }, _modelIndex{ modelIndex }, _meshName{ meshName }
 {
 }
 
@@ -83,11 +83,16 @@ void GameObject::Initialize(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> /
 
     ComPtr<ID3D12Resource> intermediateVertexBuffer;
     UpdateBufferResource(commandList.Get(),
-        &_vertexBuffer, &intermediateVertexBuffer, vertexAndColorVector.size(), sizeof(VertexPosColor), vertexAndColorVector.data());
+        &_vertexBuffer, &intermediateVertexBuffer, vertexAndColorVector.size(), sizeof(XMFLOAT3), vertexAndColorVector.data());
 
     _vertexBufferView.BufferLocation = _vertexBuffer->GetGPUVirtualAddress();
     _vertexBufferView.SizeInBytes = sizeof(XMFLOAT3) * static_cast<UINT>(vertexAndColorVector.size());
     _vertexBufferView.StrideInBytes = sizeof(VertexPosColor);
+
+    std::wstring vertString{ L" Vertex Buffer" };
+    std::wstring resourceName{ _meshName };
+    resourceName += vertString;
+    _vertexBuffer->SetName(resourceName.c_str());
 
     ComPtr<ID3D12Resource> intermediateIndexBuffer;
     UpdateBufferResource(commandList.Get(), &_indexBuffer, &intermediateIndexBuffer,

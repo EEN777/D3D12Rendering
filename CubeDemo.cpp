@@ -432,13 +432,14 @@ bool CubeDemo::LoadContent()
     auto commandList = commandQueue->GetCommandList();
 
     _gameObjects = {
-        { std::make_shared<GameObject>(L"GBPlaced.model", L"Content/GB_TextureDownRes.dds", _contentManager, 0) },
-        { std::make_shared<GameObject>(L"GBPlaced.model", L"Content/GB_TextureDownRes.dds", _contentManager, 1) },
-        { std::make_shared<GameObject>(L"GBPlaced.model", L"Content/GB_TextureDownRes.dds", _contentManager, 2) },
-        { std::make_shared<GameObject>(L"GBPlaced.model", L"Content/NeptuneColorMap.dds", _contentManager, 3) },
-        { std::make_shared<GameObject>(L"BusterSwordPlaced.model", L"Content/BusterSword_ColorMap.dds", _contentManager, 0) }
+        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/GB_TextureDownRes.dds", _contentManager, 0, L"GB Body")},
+        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/GB_TextureDownRes.dds", _contentManager, 1, L"GB Body")},
+        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/GB_TextureDownRes.dds", _contentManager, 2, L"GB Body")},
+        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/NeptuneColorMap.dds", _contentManager, 3, L"GB Eyes")},
+        { std::make_shared<GameObject>(L"BusterSwordFinalPlaced.model", L"Content/BusterSword_ColorMap.dds", _contentManager, 0, L"Buster Sword")},
+        { std::make_shared<GameObject>(L"BasaltColumnsFinalPlaced.model", L"Content/BasaltColumnColorMap.DDS", _contentManager, 0, L"Basalt Columns")},
+        { std::make_shared<GameObject>(L"SandFinalPlaced.model", L"Content/SandColorMap.DDS", _contentManager, 0, L"Sand")},
     };
-
 
     for (auto& object : _gameObjects)
     {
@@ -624,6 +625,7 @@ bool CubeDemo::UnloadContent()
     ImGui_ImplDX12_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
+
     return false;
 }
 
@@ -641,7 +643,11 @@ void CubeDemo::OnUpdate(UpdateEventArgs& args)
     _pointLight->Update(args);
 
     UpdateCameraBuffer();
-    UpdatePointLightBuffer();
+
+    if (!_isRaster)
+    {
+        UpdatePointLightBuffer();
+    }
 
     totalTime += args.ElapsedTime;
     frameCount++;
@@ -910,7 +916,7 @@ CubeDemo::AccelerationStructureBuffers CubeDemo::CreateBottomLevelAS(std::vector
     {
         if (i < vIndexBuffers.size() && vIndexBuffers[i].second > 0)
         {
-            bottomLevelAS.AddVertexBuffer(vVertexBuffers[i].first.Get(), 0, vVertexBuffers[i].second, sizeof(VertexPosColor), vIndexBuffers[i].first.Get(), 0, vIndexBuffers[i].second, nullptr, 0, true);
+            bottomLevelAS.AddVertexBuffer(vVertexBuffers[i].first.Get(), 0, vVertexBuffers[i].second / 2, sizeof(VertexPosColor), vIndexBuffers[i].first.Get(), 0, vIndexBuffers[i].second, nullptr, 0, true);
         }
         else
         {

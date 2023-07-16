@@ -16,7 +16,7 @@
       <Filter>Helpers</Filter>
     </ClCompile>
     <ClCompile Include="CubeDemo.cpp">
-      <Filter>Content\CubeDemo</Filter>
+      <Filter>CubeDemo</Filter>
     </ClCompile>
     <ClCompile Include="ContentManager.cpp">
       <Filter>Utility\ContentManager</Filter>
@@ -128,7 +128,7 @@
       <Filter>Helpers</Filter>
     </ClInclude>
     <ClInclude Include="CubeDemo.h">
-      <Filter>Content\CubeDemo</Filter>
+      <Filter>CubeDemo</Filter>
     </ClInclude>
     <ClInclude Include="CommonStructures.h">
       <Filter>Helpers</Filter>
@@ -289,14 +289,14 @@
     <Filter Include="Utility\Camera">
       <UniqueIdentifier>{aca7643d-980b-4628-85f0-226a4a60cf84}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Content\CubeDemo">
-      <UniqueIdentifier>{d935544b-256c-480b-8231-ae99fbc3234b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Imgui">
       <UniqueIdentifier>{12a007ce-22d3-4452-95f5-237ba4c39e06}</UniqueIdentifier>
     </Filter>
     <Filter Include="Lights">
       <UniqueIdentifier>{42689551-e246-417a-b138-3b2645087b73}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CubeDemo">
+      <UniqueIdentifier>{d935544b-256c-480b-8231-ae99fbc3234b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -337,25 +337,7 @@
     <CopyFileToFolders Include="RayGen.hlsl">
       <Filter>Shaders</Filter>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\Cube.model">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\beach_ball.model">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
     <CopyFileToFolders Include="Content\Sphere.obj.bin">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\TestFile.png">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\EarthComposite.dds">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\earthmap.jpg">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\GB.model">
       <Filter>Content</Filter>
     </CopyFileToFolders>
     <CopyFileToFolders Include="Content\GB_Texture.DDS">
@@ -364,53 +346,32 @@
     <CopyFileToFolders Include="Content\GB_TextureDownRes.dds">
       <Filter>Content</Filter>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\TestSphere.model">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\sibenik.model">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\head.model">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\CB.model">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\basaltColumns.model">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\CompositeTest.model">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\BusterSword.model">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
     <CopyFileToFolders Include="Content\BusterSword_ColorMap.dds">
       <Filter>Content</Filter>
     </CopyFileToFolders>
     <CopyFileToFolders Include="Content\NeptuneColorMap.dds">
       <Filter>Content</Filter>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\dirt.model">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\Ground.model">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\PPPScene.model">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\BusterSwordPlaced.model">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\GBPlaced.model">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Content\GroundPlaced.model">
-      <Filter>Content</Filter>
-    </CopyFileToFolders>
     <CopyFileToFolders Include="ShadowRay.hlsl">
       <Filter>Shaders</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\BasaltColumnsFinalPlaced.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\GBFinalPlaced.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\BusterSwordFinalPlaced.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\BasaltColumnColorMap.DDS">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\SandFinalPlaced.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\SandColorMap.DDS">
+      <Filter>Content</Filter>
     </CopyFileToFolders>
   </ItemGroup>
 </Project>
