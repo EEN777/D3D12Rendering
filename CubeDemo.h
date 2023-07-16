@@ -9,15 +9,11 @@
 #include <dxcapi.h>
 #include "nv_helpers_dx12/TopLevelASGenerator.h"
 #include "nv_helpers_dx12/ShaderBindingTableGenerator.h"
+#include "PointLight.h"
 
 class CubeDemo : public Game
 {
 	uint64_t _fenceValues[Window::BufferCount]{};
-	//Microsoft::WRL::ComPtr<ID3D12Resource> _vertexBuffer;
-	//D3D12_VERTEX_BUFFER_VIEW _vertexBufferView;
-
-	//Microsoft::WRL::ComPtr<ID3D12Resource> _indexBuffer;
-	//D3D12_INDEX_BUFFER_VIEW _indexBufferView;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> _depthBuffer;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> _DSVHeap;
@@ -27,6 +23,7 @@ class CubeDemo : public Game
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> _pipelineState;
 
 	std::shared_ptr<FirstPersonCamera> _camera;
+	std::shared_ptr<PointLight> _pointLight;
 
 	D3D12_VIEWPORT _viewport;
 	D3D12_RECT _scissorRect;
@@ -41,8 +38,8 @@ class CubeDemo : public Game
 	DirectX::XMMATRIX _viewMatrix;
 	DirectX::XMMATRIX _projectionMatrix;
 
-	bool _contentLoaded;
-	bool _isRaster;
+	bool _contentLoaded{ false };
+	bool _isRaster{ true };
 
 	struct AccelerationStructureBuffers
 	{
@@ -70,9 +67,11 @@ class CubeDemo : public Game
 	ComPtr<IDxcBlob> m_rayGenLibrary;
 	ComPtr<IDxcBlob> m_hitLibrary;
 	ComPtr<IDxcBlob> m_missLibrary;
+	ComPtr<IDxcBlob> m_shadowLibrary;
 	ComPtr<ID3D12RootSignature> m_rayGenSignature;
 	ComPtr<ID3D12RootSignature> m_hitSignature;
 	ComPtr<ID3D12RootSignature> m_missSignature;
+	ComPtr<ID3D12RootSignature> m_shadowSignature;
 	ComPtr<ID3D12StateObject> m_rtStateObject;
 	ComPtr<ID3D12StateObjectProperties> m_rtStateObjectProps;
 
@@ -90,6 +89,12 @@ class CubeDemo : public Game
 	ComPtr<ID3D12Resource> m_cameraBuffer;
 	ComPtr<ID3D12DescriptorHeap> m_constHeap;
 	uint32_t m_cameraBufferSize = 0;
+
+	void CreatePointLightBuffer();
+	void UpdatePointLightBuffer();
+	ComPtr<ID3D12Resource> m_pointLightBuffer;
+	ComPtr<ID3D12DescriptorHeap> m_pointLightHeap;
+	uint32_t m_pointLightBufferSize = 0;
 
 	Library::ContentManager _contentManager{};
 
@@ -119,6 +124,8 @@ public:
 	std::vector<KeyCode::Key> cameraKeyArgument{};
 	std::pair<int, int> cameraMouseArgument{INT_MIN, INT_MIN};
 	std::pair<int, int> startingMousePos{};
+
+	std::vector<KeyCode::Key> pointLightArgument;
 
 
 	CubeDemo(const std::wstring& name, int width, int height, bool vSync = false);

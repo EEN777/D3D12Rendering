@@ -6,6 +6,13 @@
 #include "Application.h"
 #include "CubeDemo.h"
 
+#include "imgui.h"
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx12.h"
+#include <d3d12.h>
+#include <dxgi1_4.h>
+#include <tchar.h>
+
 #include <dxgidebug.h>
 
 #pragma comment(lib, "dxguid.lib")
@@ -34,7 +41,7 @@ int CALLBACK wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR lpCmdL
 
     Application::Create(hInstance);
     {
-        std::shared_ptr<CubeDemo> demo = std::make_shared<CubeDemo>(L"Learning DirectX 12 - Cube Demo", 1280, 720);
+        std::shared_ptr<CubeDemo> demo = std::make_shared<CubeDemo>(L"DXR Scene", 1280, 720);
         retCode = Application::Get().Run(demo);
     }
     Application::Destroy();

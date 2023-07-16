@@ -79,6 +79,8 @@ void GameObject::Initialize(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> /
 
     auto commandList = commandQueue->GetCommandList();
 
+    assert(vertexAndColorVector.data() != nullptr);
+
     ComPtr<ID3D12Resource> intermediateVertexBuffer;
     UpdateBufferResource(commandList.Get(),
         &_vertexBuffer, &intermediateVertexBuffer, vertexAndColorVector.size(), sizeof(VertexPosColor), vertexAndColorVector.data());
@@ -138,7 +140,7 @@ void GameObject::UpdateObject()
     auto fwd = Library::Vector3Helper::Forward;
     auto up = Library::Vector3Helper::Up;
     auto right = Library::Vector3Helper::Right;
-    auto pos = XMFLOAT3{ -15.0f, -15.0f, -15.0f };
+    auto pos = XMFLOAT3{ 0.0f, 0.0f, 0.0f };
 
     XMMATRIX worldMatrix = XMMatrixIdentity();
     Library::MatrixHelper::SetForward(worldMatrix, fwd);
