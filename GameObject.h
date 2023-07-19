@@ -25,6 +25,7 @@ class GameObject
 
 	const std::wstring _modelFile;
 	const std::wstring _textureFile;
+	const std::wstring _normalFile;
 	Library::ContentManager* _contentManager;
 	UINT _indexCount;
 	UINT _vertexCount;
@@ -42,10 +43,14 @@ class GameObject
 	ComPtr<ID3D12Resource> _textureUploadResource;
 	ComPtr<ID3D12DescriptorHeap> _texDescriptorHeap;
 
+	ComPtr<ID3D12Resource> _normalResource;
+	ComPtr<ID3D12Resource> _normalUploadResource;
+	ComPtr<ID3D12DescriptorHeap> _normDescriptorHeap;
+
 	void UpdateBufferResource(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> commandList, ID3D12Resource** destinationResource, ID3D12Resource** intermediateResource, std::size_t numElements, std::size_t elementSize, const void* bufferData, D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
 
 public:
-	GameObject(std::wstring modelFile, std::wstring textureFile, Library::ContentManager& contentManager, std::size_t modelIndex = 0, const std::wstring& meshName = L"UNNAMED");
+	GameObject(const std::wstring& modelFile, const std::wstring& textureFile, const std::wstring& normalFile, Library::ContentManager& contentManager, std::size_t modelIndex = 0, const std::wstring& meshName = L"UNNAMED");
 	~GameObject() = default;
 
 	void Initialize(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> commandList, std::shared_ptr<FirstPersonCamera> camera);
@@ -59,4 +64,6 @@ public:
 	UINT VertCount();
 	ComPtr<ID3D12DescriptorHeap> TextureDecsriptorHeap();
 	ComPtr<ID3D12Resource>& TextureResource();
+	ComPtr<ID3D12DescriptorHeap> NormalDescriptorHeap();
+	ComPtr<ID3D12Resource>& NormalResource();
 };

@@ -373,5 +373,17 @@
     <CopyFileToFolders Include="Content\SandColorMap.DDS">
       <Filter>Content</Filter>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\Basalt_Normal.dds">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\BusterSword_Normal.dds">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\GiantBaby_Normal.dds">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="ScatterShader.hlsl">
+      <Filter>Shaders</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>

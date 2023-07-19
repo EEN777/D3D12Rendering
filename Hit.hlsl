@@ -6,10 +6,13 @@ struct STriVertex
     float3 TexCoord;
 };
 
-struct ShadowHitInfo
+struct ScatterHitInfo
 {
-    bool isHit;
+    uint maxDepth;
+    uint currentDepth;
+    float3 cumulativeColor;
 };
+
 
 RaytracingAccelerationStructure SceneBVH : register(t0, space3);
 Texture2D<float4> texture[] : register(t2, space0);
@@ -19,6 +22,11 @@ ByteAddressBuffer indices[] : register(t0, space2);
 cbuffer PointLightLocation : register(b0)
 {
     float3 lightPosition;
+};
+
+struct ShadowHitInfo
+{
+    bool isHit;
 };
 
 uint3 GetIndices(uint triangleIndex)
@@ -55,28 +63,49 @@ void ClosestHit(inout HitInfo payload, Attributes attrib)
         float3 barycentrics = float3((1.0f - attrib.bary.x - attrib.bary.y), attrib.bary.x, attrib.bary.y);
         VertexAttributes vertex = GetVertexAttributes(triangleIndex, barycentrics);
 
+        uint colorMapIndex = InstanceID() * 2;
+        uint normalMapIndex = colorMapIndex + 1;
+        
         uint width, height;
-        texture[InstanceID()].GetDimensions(width, height);
+        texture[colorMapIndex].GetDimensions(width, height);
     
         int2 coord = int2(vertex.uv.x * width, vertex.uv.y * height);
-        float3 color = texture[InstanceID()].Load(int3(coord, 0)).rgb;
+        float3 color = texture[colorMapIndex].Load(int3(coord, 0)).rgb;
+        
+        texture[normalMapIndex].GetDimensions(width, height);
+        coord = int2(vertex.uv.x * width, vertex.uv.y * height);
+        float3 normal = texture[normalMapIndex].Load(int3(coord, 0)).rgb;
         
         float3 lightPos = float3(lightPosition);
     
-        //payload.colorAndDistance = float4(color.rgb, RayTCurrent());
         
-          // Find the world - space hit position
+        // Find the world - space hit position
         float3 worldOrigin = WorldRayOrigin() + RayTCurrent() * WorldRayDirection();
 
+        //normals exported from Unreal, inverting them here.
         float3 lightDir = normalize(lightPos - worldOrigin);
-
-        // Fire a shadow ray. The direction is hard-coded here, but can be fetched
-        // from a constant-buffer
+        normal = normalize(normal);
+        normal = normal * -1;
+        
+        //This would need to be adjusted if the models were moved.
+        //float3 worldNormal = mul(normal, float3x3(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f));
+        //worldNormal = normalize(worldNormal);
+        
+        float ambientLightIntensity = 0.01f;
+        
+        float NdotL = max(dot(normal, lightDir), 0.0f);
+        
+        //NdotL = NdotL > 0 ? NdotL : -1.0f * NdotL;
+        
+        float dist = length(worldOrigin - lightPos);
+        
+        float radius = 2000;
+        
         RayDesc ray;
         ray.Origin = worldOrigin;
         ray.Direction = lightDir;
         ray.TMin = 0.01;
-        ray.TMax = 100000;
+        ray.TMax = 100000; // Slight optimization possible? Was originally a TMax of 100000 but now using the calulated distance from the light source.
         bool hit = true;
 
         // Initialize the ray payload
@@ -84,46 +113,98 @@ void ClosestHit(inout HitInfo payload, Attributes attrib)
         shadowPayload.isHit = false;
         
       // Trace the ray
-      TraceRay(
-      // Acceleration structure
-      SceneBVH,
-      // Flags can be used to specify the behavior upon hitting a surface
-      RAY_FLAG_NONE,
-      // Instance inclusion mask, which can be used to mask out some geometry to
-      // this ray by and-ing the mask with a geometry mask. The 0xFF flag then
-      // indicates no geometry will be masked
-      0xFF,
-      // Depending on the type of ray, a given object can have several hit
-      // groups attached (ie. what to do when hitting to compute regular
-      // shading, and what to do when hitting to compute shadows). Those hit
-      // groups are specified sequentially in the SBT, so the value below
-      // indicates which offset (on 4 bits) to apply to the hit groups for this
-      // ray. In this sample we only have one hit group per object, hence an
-      // offset of 0.
-      1,
-      // The offsets in the SBT can be computed from the object ID, its instance
-      // ID, but also simply by the order the objects have been pushed in the
-      // acceleration structure. This allows the application to group shaders in
-      // the SBT in the same order as they are added in the AS, in which case
-      // the value below represents the stride (4 bits representing the number
-      // of hit groups) between two consecutive objects.
-      0,
-      // Index of the miss shader to use in case several consecutive miss
-      // shaders are present in the SBT. This allows to change the behavior of
-      // the program when no geometry have been hit, for example one to return a
-      // sky color for regular rendering, and another returning a full
-      // visibility value for shadow rays. This sample has only one miss shader,
-      // hence an index 0
-      1,
-      // Ray information to trace
-      ray,
-      // Payload associated to the ray, which will be used to communicate
-      // between the hit/miss shaders and the raygen
-      shadowPayload);
-    
+      TraceRay(SceneBVH, RAY_FLAG_NONE, 0xFF, 1, 0, 1, ray, shadowPayload);
         float factor = shadowPayload.isHit ? 0.3 : 1.0;
+        //uint sampleCount = 32;
+        
+        //float3 u, v, w;
+        //w = normal;
+        //u = normalize(cross((abs(w.x) > 0.1 ? float3(0.0f, 1.0f, 0.0f) : float3(1.0f, 0.0f, 0.0f)), w));
+        //v = cross(w, u);
+        
+        ////[unroll]
+        //for (uint i = 0; i < sampleCount; ++i)
+        //{
+        //    uint state = RNG::SeedThread(777 * i);
+        //    float randX = RNG::Random01(state);
+        //    state = RNG::SeedThread(322 * i);
+        //    float randY = RNG::Random01(state);
+        //    float3 randomPoint = SampleCosineHemisphere(float2(randX, randY));
+        //    randomPoint = randomPoint.x * u + randomPoint.y * v + randomPoint.z * w;
+        //    randomPoint = worldOrigin + randomPoint;
+        
+        //    lightDir = normalize(lightPos - randomPoint);
+        //    ray.Origin = randomPoint;
+        //    ray.Direction = lightDir;
+        //    // Trace the ray
+        //    TraceRay(SceneBVH, RAY_FLAG_NONE, 0xFF, 1, 0, 1, ray, shadowPayload);
+        //    factor += shadowPayload.isHit ? 0.3 : 1.0;
+        //}
+        
+        //factor = factor / (sampleCount + 1);
+        
+        float3 lightColor = float3(1.0f, 1.0f, 1.0f);
+        //float lightIntensity = 100;
+        //lightColor *= lightIntensity;
+        
+        float3 baseColor = color.rgb;
+        
+        if (dist > radius)
+        {
+            baseColor = baseColor * ambientLightIntensity;
+        }
+        
+        else
+        {
+            float ratio = max((1.0f - (dist / radius)), 0.0f);
+            baseColor = baseColor * (ratio * lightColor * NdotL + ambientLightIntensity);
+        }
+        
+        ScatterHitInfo scatterPayload;
+        scatterPayload.cumulativeColor = baseColor;
+        scatterPayload.currentDepth = 1;
+        scatterPayload.maxDepth = 4;
+        
+        float3 u, v, w;
+        w = normal;
+        u = normalize(cross((abs(w.x) > 0.1 ? float3(0.0f, 1.0f, 0.0f) : float3(1.0f, 0.0f, 0.0f)), w));
+        v = cross(w, u);
+        
+        uint sampleCount = 10000;
+        
+        float3 sampledColor = baseColor; //float3(0.0f, 0.0f, 0.0f);
+        for (uint i = 0; i < sampleCount; ++i)
+        {
+            uint state = RNG::SeedThread(777 * i);
+            float randX = RNG::Random01(state);
+            state = RNG::SeedThread(322 * i);
+            float randY = RNG::Random01(state);
+            float3 randomPoint = SampleCosineHemisphere(float2(randX, randY));
+            randomPoint = randomPoint.x * u + randomPoint.y * v + randomPoint.z * w;
+        
+            float3 newDir = normalize(randomPoint - worldOrigin);
+            newDir = normalize(newDir);
+            float cosTheta = max(dot(normal, newDir), 0);
+            baseColor *= cosTheta;
+        
+            RayDesc scatterRay;
+            scatterRay.Origin = worldOrigin;
+            scatterRay.Direction = newDir;
+            scatterRay.TMin = 0.01;
+            scatterRay.TMax = 100000;
+        
+            TraceRay(SceneBVH, RAY_FLAG_NONE, 0xFF, 2, 0, 2, scatterRay, scatterPayload);
+            //scatterPayload.cumulativeColor /= scatterPayload.currentDepth;
+            //sampledColor += baseColor * cosTheta * scatterPayload.cumulativeColor /** (4 * PI)*/;
+            sampledColor += scatterPayload.cumulativeColor;
+        }
+        
+        //sampledColor = sampledColor / (sampleCount + 1);
+        float3 finalColor = sampledColor * factor;
+        
+        //finalColor = finalColor * 257;
 
-        float4 hitColor = float4(color.rgb * factor, RayTCurrent());
+        float4 hitColor = float4(finalColor, RayTCurrent());
         payload.colorAndDistance = float4(hitColor);
     }
 }

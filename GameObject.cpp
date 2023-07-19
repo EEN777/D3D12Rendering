@@ -37,8 +37,8 @@ void GameObject::UpdateBufferResource(Microsoft::WRL::ComPtr<ID3D12GraphicsComma
     }
 }
 
-GameObject::GameObject(std::wstring modelFile, std::wstring textureFile, Library::ContentManager& contentManager, std::size_t modelIndex, const std::wstring& meshName) :
-    _modelFile{ modelFile }, _textureFile{ textureFile }, _contentManager{ &contentManager }, _modelIndex{ modelIndex }, _meshName{ meshName }
+GameObject::GameObject(const std::wstring& modelFile, const std::wstring& textureFile, const std::wstring& normalFile, Library::ContentManager& contentManager, std::size_t modelIndex, const std::wstring& meshName) :
+    _modelFile{ modelFile }, _textureFile{ textureFile }, _normalFile{ normalFile }, _contentManager{ &contentManager }, _modelIndex{ modelIndex }, _meshName{ meshName }
 {
 }
 
@@ -109,6 +109,7 @@ void GameObject::Initialize(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> /
     srvHeapDesc.NumDescriptors = 1; // Number of textures to bind
     srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     ThrowIfFailedI(device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(_texDescriptorHeap.GetAddressOf())));
+    ThrowIfFailedI(device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(_normDescriptorHeap.GetAddressOf())));
 
     CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(_texDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
@@ -118,6 +119,13 @@ void GameObject::Initialize(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> /
     ThrowIfFailedI(DirectX::CreateDDSTextureFromFile12(device.Get(),
         textureCommandList.Get(), _textureFile.c_str(),
         _textureResource, _textureUploadResource));
+
+    if (!_normalFile.empty())
+    {
+        ThrowIfFailedI(DirectX::CreateDDSTextureFromFile12(device.Get(),
+            textureCommandList.Get(), _normalFile.c_str(),
+            _normalResource, _normalUploadResource));
+    }
 
     auto textureFenceValue = commandQueue->ExecuteCommandList(textureCommandList);
     commandQueue->WaitForFenceValue(textureFenceValue);
@@ -132,6 +140,13 @@ void GameObject::Initialize(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> /
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
     device->CreateShaderResourceView(_textureResource.Get(), &srvDesc, hDescriptor);
+
+    if (!_normalFile.empty())
+    {
+        //srvDesc.Format = _normalResource->GetDesc().Format;
+        //hDescriptor = _normDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+        //device->CreateShaderResourceView(_normalResource.Get(), &srvDesc, hDescriptor);
+    }
 
     auto fenceValue = commandQueue->ExecuteCommandList(commandList);
     commandQueue->WaitForFenceValue(fenceValue);
@@ -189,6 +204,16 @@ ComPtr<ID3D12DescriptorHeap> GameObject::TextureDecsriptorHeap()
 ComPtr<ID3D12Resource>& GameObject::TextureResource()
 {
     return _textureResource;
+}
+
+ComPtr<ID3D12DescriptorHeap> GameObject::NormalDescriptorHeap()
+{
+    return _normDescriptorHeap;
+}
+
+ComPtr<ID3D12Resource>& GameObject::NormalResource()
+{
+    return _normalResource;
 }
 
 UINT GameObject::IndexCount()

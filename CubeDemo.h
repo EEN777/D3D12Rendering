@@ -68,10 +68,12 @@ class CubeDemo : public Game
 	ComPtr<IDxcBlob> m_hitLibrary;
 	ComPtr<IDxcBlob> m_missLibrary;
 	ComPtr<IDxcBlob> m_shadowLibrary;
+	ComPtr<IDxcBlob> m_lightSampleLibrary;
 	ComPtr<ID3D12RootSignature> m_rayGenSignature;
 	ComPtr<ID3D12RootSignature> m_hitSignature;
 	ComPtr<ID3D12RootSignature> m_missSignature;
 	ComPtr<ID3D12RootSignature> m_shadowSignature;
+	ComPtr<ID3D12RootSignature> m_lightSampleSignature;
 	ComPtr<ID3D12StateObject> m_rtStateObject;
 	ComPtr<ID3D12StateObjectProperties> m_rtStateObjectProps;
 

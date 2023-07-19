@@ -77,7 +77,7 @@ ComPtr<ID3D12RootSignature> CubeDemo::CreateHitSignature()
     nv_helpers_dx12::RootSignatureGenerator rsc;
     //rsc.AddRootParameter(D3D12_ROOT_PARAMETER_TYPE_SRV, 0);
     //rsc.AddRootParameter(D3D12_ROOT_PARAMETER_TYPE_SRV, 1);
-
+    
     rsc.AddHeapRangesParameter({
         {0, 1, 3, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1}
     });
@@ -118,29 +118,34 @@ void CubeDemo::CreateRayTracingPipeline()
     m_hitLibrary = nv_helpers_dx12::CompileShaderLibrary(L"Hit.hlsl");
     m_missLibrary = nv_helpers_dx12::CompileShaderLibrary(L"Miss.hlsl");
     m_shadowLibrary = nv_helpers_dx12::CompileShaderLibrary(L"ShadowRay.hlsl");
+    m_lightSampleLibrary = nv_helpers_dx12::CompileShaderLibrary(L"ScatterShader.hlsl");
 
     pipeline.AddLibrary(m_rayGenLibrary.Get(), { L"RayGen" });
     pipeline.AddLibrary(m_hitLibrary.Get(), { L"ClosestHit" });
     pipeline.AddLibrary(m_missLibrary.Get(), { L"Miss" });
     pipeline.AddLibrary(m_shadowLibrary.Get(), { L"ShadowClosestHit" , L"ShadowMiss" });
+    pipeline.AddLibrary(m_lightSampleLibrary.Get(), { L"ScatterClosestHit" , L"ScatterMiss" });
 
     m_rayGenSignature = CreateRayGenSignature();
     m_missSignature = CreateMissSignature();
     m_hitSignature = CreateHitSignature();
     m_shadowSignature = CreateHitSignature();
+    m_lightSampleSignature = CreateHitSignature();
 
     pipeline.AddHitGroup(L"HitGroup", L"ClosestHit");
     pipeline.AddHitGroup(L"ShadowHitGroup", L"ShadowClosestHit");
+    pipeline.AddHitGroup(L"ScatterHitGroup", L"ScatterClosestHit");
 
     pipeline.AddRootSignatureAssociation(m_rayGenSignature.Get(), { L"RayGen" });
     pipeline.AddRootSignatureAssociation(m_missSignature.Get(), { L"Miss" });
     pipeline.AddRootSignatureAssociation(m_hitSignature.Get(), { L"HitGroup" });
     pipeline.AddRootSignatureAssociation(m_shadowSignature.Get(), { L"ShadowHitGroup" });
+    pipeline.AddRootSignatureAssociation(m_lightSampleSignature.Get(), { L"ScatterHitGroup" });
     pipeline.AddRootSignatureAssociation(m_missSignature.Get(), { L"Miss", L"ShadowMiss"});
 
-    pipeline.SetMaxPayloadSize(4 * sizeof(float));
+    pipeline.SetMaxPayloadSize(8 * sizeof(float));
     pipeline.SetMaxAttributeSize(2 * sizeof(float));
-    pipeline.SetMaxRecursionDepth(2);
+    pipeline.SetMaxRecursionDepth(6);
 
     m_rtStateObject = pipeline.Generate();
     ThrowIfFailed(m_rtStateObject->QueryInterface(IID_PPV_ARGS(&m_rtStateObjectProps)));
@@ -169,7 +174,7 @@ void CubeDemo::CreateShaderResourceHeap()
 {
     auto device = Application::Get().GetDevice().Get();
 
-    uint32_t heapCount = 4 + (_gameObjects.size() * (3)); // _gamObjects.size() multiplied by 3 for Texture, VertexBuffer, and IndexBuffer.
+    uint32_t heapCount = 4 + (_gameObjects.size() * (4)); // _gamObjects.size() multiplied by 3 for Texture, Normal Map VertexBuffer, and IndexBuffer.
 
     m_srvUavHeap = nv_helpers_dx12::CreateDescriptorHeap(device, heapCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true);
 
@@ -214,7 +219,11 @@ void CubeDemo::CreateShaderResourceHeap()
         srvDescTex.Format = object->TextureResource()->GetDesc().Format;
         device->CreateShaderResourceView(object->TextureResource().Get(), &srvDescTex, srvHandle);
         srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        srvDescTex.Format = object->NormalResource()->GetDesc().Format;
+        device->CreateShaderResourceView(object->NormalResource().Get(), &srvDescTex, srvHandle);
+        srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     }
+
 
     D3D12_SHADER_RESOURCE_VIEW_DESC vertDesc = {};
     vertDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -230,8 +239,6 @@ void CubeDemo::CreateShaderResourceHeap()
         device->CreateShaderResourceView(object->VertexBuffer().Get(), &vertDesc, srvHandle);
         srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     }
-
-
 
     D3D12_SHADER_RESOURCE_VIEW_DESC indexDesc = {};
     indexDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -263,7 +270,7 @@ void CubeDemo::CreateShaderBindingTable()
     textureSrvHandle.ptr = pointLightSrvHandle.ptr + (device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 
     D3D12_GPU_DESCRIPTOR_HANDLE vertexSrvHandle = textureSrvHandle;
-    vertexSrvHandle.ptr = textureSrvHandle.ptr + (_gameObjects.size() * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+    vertexSrvHandle.ptr = textureSrvHandle.ptr + ((_gameObjects.size() * 2) * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 
     D3D12_GPU_DESCRIPTOR_HANDLE indexSrvHandle = vertexSrvHandle;
     indexSrvHandle.ptr = vertexSrvHandle.ptr + (_gameObjects.size() * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
@@ -279,7 +286,9 @@ void CubeDemo::CreateShaderBindingTable()
     m_sbtHelper.AddMissProgram(L"Miss", {});
     m_sbtHelper.AddHitGroup(L"HitGroup", { {heapPointer, texPointer, vertexPointer, indexPointer, pointLightPointer, nullptr, nullptr, nullptr, nullptr, nullptr}}); // Padding with nullptr as needed.
     m_sbtHelper.AddHitGroup(L"ShadowHitGroup", { {heapPointer}});
+    m_sbtHelper.AddHitGroup(L"ScatterHitGroup", { {heapPointer, texPointer, vertexPointer, indexPointer, pointLightPointer, nullptr, nullptr, nullptr, nullptr, nullptr}}); // Padding with nullptr as needed.
     m_sbtHelper.AddMissProgram(L"ShadowMiss", { {}});
+    m_sbtHelper.AddMissProgram(L"ScatterMiss", { {}});
 
     const uint32_t sbtSize = m_sbtHelper.ComputeSBTSize();
     m_sbtStorage = nv_helpers_dx12::CreateBuffer(device, sbtSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, nv_helpers_dx12::kUploadHeapProps);
@@ -426,19 +435,20 @@ bool CubeDemo::LoadContent()
     _camera->SetPosition(-125, 100, -500);
 
     _pointLight = std::make_shared<PointLight>();
+    _pointLight->SetPosition(0.0f, 0.0f, -1500.0f);
 
     auto device = Application::Get().GetDevice();
     auto commandQueue = Application::Get().GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
     auto commandList = commandQueue->GetCommandList();
 
     _gameObjects = {
-        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/GB_TextureDownRes.dds", _contentManager, 0, L"GB Body")},
-        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/GB_TextureDownRes.dds", _contentManager, 1, L"GB Body")},
-        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/GB_TextureDownRes.dds", _contentManager, 2, L"GB Body")},
-        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/NeptuneColorMap.dds", _contentManager, 3, L"GB Eyes")},
-        { std::make_shared<GameObject>(L"BusterSwordFinalPlaced.model", L"Content/BusterSword_ColorMap.dds", _contentManager, 0, L"Buster Sword")},
-        { std::make_shared<GameObject>(L"BasaltColumnsFinalPlaced.model", L"Content/BasaltColumnColorMap.DDS", _contentManager, 0, L"Basalt Columns")},
-        { std::make_shared<GameObject>(L"SandFinalPlaced.model", L"Content/SandColorMap.DDS", _contentManager, 0, L"Sand")},
+        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/GB_TextureDownRes.dds", L"Content/GiantBaby_Normal.dds", _contentManager, 0, L"GB Body")},
+        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/GB_TextureDownRes.dds", L"Content/GiantBaby_Normal.dds", _contentManager, 1, L"GB Body")},
+        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/GB_TextureDownRes.dds", L"Content/GiantBaby_Normal.dds", _contentManager, 2, L"GB Body")},
+        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/NeptuneColorMap.dds", L"Content/GiantBaby_Normal.dds", _contentManager, 3, L"GB Eyes")},
+        { std::make_shared<GameObject>(L"BusterSwordFinalPlaced.model", L"Content/BusterSword_ColorMap.dds", L"Content/BusterSword_Normal.dds", _contentManager, 0, L"Buster Sword")},
+        { std::make_shared<GameObject>(L"BasaltColumnsFinalPlaced.model", L"Content/BasaltColumnColorMap.DDS", L"Content/Basalt_Normal.dds", _contentManager, 0, L"Basalt Columns")},
+        { std::make_shared<GameObject>(L"SandFinalPlaced.model", L"Content/SandColorMap.DDS", L"Content/Basalt_Normal.dds", _contentManager, 0, L"Sand")},
     };
 
     for (auto& object : _gameObjects)
