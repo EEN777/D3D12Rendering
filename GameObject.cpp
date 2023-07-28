@@ -111,20 +111,46 @@ void GameObject::Initialize(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> /
     ThrowIfFailedI(device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(_texDescriptorHeap.GetAddressOf())));
     ThrowIfFailedI(device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(_normDescriptorHeap.GetAddressOf())));
 
+    ComPtr<ID3D12Resource> intermediateMaterialPropertiesBuffer;
+    UpdateBufferResource(commandList.Get(), &_materialPropertyBuffer, &intermediateMaterialPropertiesBuffer,
+        1, sizeof(MaterialProperties), &materialProperties);
+
+    _materialPropertyBufferView.FirstElement = _materialPropertyBuffer->GetGPUVirtualAddress();
+    _materialPropertyBufferView.NumElements = 1;
+    _materialPropertyBufferView.StructureByteStride = sizeof(MaterialProperties);
+
     CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(_texDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
 
     auto textureCommandList = commandQueue->GetCommandList();
 
-    ThrowIfFailedI(DirectX::CreateDDSTextureFromFile12(device.Get(),
-        textureCommandList.Get(), _textureFile.c_str(),
-        _textureResource, _textureUploadResource));
+    if (!resourceMap.contains(_textureFile))
+    {
+        ThrowIfFailedI(DirectX::CreateDDSTextureFromFile12(device.Get(),
+            textureCommandList.Get(), _textureFile.c_str(),
+            _textureResource, _textureUploadResource));
+        resourceMap.emplace(std::pair{_textureFile, _textureResource.Get()});
+    }
+
+    else
+    {
+        _textureResource = ComPtr<ID3D12Resource>{ resourceMap.at(_textureFile) };
+    }
 
     if (!_normalFile.empty())
     {
-        ThrowIfFailedI(DirectX::CreateDDSTextureFromFile12(device.Get(),
-            textureCommandList.Get(), _normalFile.c_str(),
-            _normalResource, _normalUploadResource));
+        if (!resourceMap.contains(_normalFile))
+        {
+            ThrowIfFailedI(DirectX::CreateDDSTextureFromFile12(device.Get(),
+                textureCommandList.Get(), _normalFile.c_str(),
+                _normalResource, _normalUploadResource));
+            resourceMap.emplace(std::pair{_normalFile, _normalResource.Get()});
+        }
+
+        else
+        {
+            _normalResource = ComPtr<ID3D12Resource>{ resourceMap.at(_normalFile) };
+        }
     }
 
     auto textureFenceValue = commandQueue->ExecuteCommandList(textureCommandList);
@@ -174,6 +200,9 @@ void GameObject::UpdateObject()
     worldMatrix = XMLoadFloat4x4(&temp);
 
     _mvpMatrix = XMMatrixMultiply(_modelMatrix, _camera->ViewProjectionMatrix());
+
+    //auto translation = XMMatrixTranslation(0.1f, 0.1f, 0.1f);
+    //_worldMatrix = XMMatrixMultiply(_worldMatrix, translation);
 }
 
 Microsoft::WRL::ComPtr<ID3D12Resource>& GameObject::VertexBuffer()
@@ -184,6 +213,11 @@ Microsoft::WRL::ComPtr<ID3D12Resource>& GameObject::VertexBuffer()
 Microsoft::WRL::ComPtr<ID3D12Resource>& GameObject::IndexBuffer()
 {
     return _indexBuffer;
+}
+
+Microsoft::WRL::ComPtr<ID3D12Resource>& GameObject::MaterialPropertiesBuffer()
+{
+    return _materialPropertyBuffer;
 }
 
 D3D12_VERTEX_BUFFER_VIEW GameObject::VertexBufferView()
@@ -204,6 +238,26 @@ ComPtr<ID3D12DescriptorHeap> GameObject::TextureDecsriptorHeap()
 ComPtr<ID3D12Resource>& GameObject::TextureResource()
 {
     return _textureResource;
+}
+
+const DirectX::XMMATRIX& GameObject::WorldMatrix()
+{
+    return _worldMatrix;
+}
+
+D3D12_BUFFER_SRV GameObject::MaterialPropertiesView()
+{
+    return _materialPropertyBufferView;
+}
+
+float* GameObject::Scale()
+{
+    return &scale;
+}
+
+MaterialProperties& GameObject::GetMaterialProperties()
+{
+    return materialProperties;
 }
 
 ComPtr<ID3D12DescriptorHeap> GameObject::NormalDescriptorHeap()
@@ -239,4 +293,11 @@ void GameObject::DrawObject(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> c
     commandList->SetGraphicsRootDescriptorTable(1, _texDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
     commandList->DrawIndexedInstanced(_indexCount, 1, 0, 0, 0);
+}
+
+void GameObject::UpdatePosition(float x, float y, float z)
+{
+    _worldMatrix = XMMatrixMultiply(XMMatrixIdentity(), XMMatrixScaling(scale, scale, scale));
+    auto translation = XMMatrixTranslation(x, y, z);
+    _worldMatrix = XMMatrixMultiply(_worldMatrix, translation);
 }

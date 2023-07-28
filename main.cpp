@@ -41,7 +41,7 @@ int CALLBACK wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR lpCmdL
 
     Application::Create(hInstance);
     {
-        std::shared_ptr<CubeDemo> demo = std::make_shared<CubeDemo>(L"DXR Scene", 1280, 720);
+        std::shared_ptr<CubeDemo> demo = std::make_shared<CubeDemo>(L"DXR Scene", 1920, 1080);
         retCode = Application::Get().Run(demo);
     }
     Application::Destroy();

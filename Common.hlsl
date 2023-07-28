@@ -9,6 +9,19 @@
 struct HitInfo
 {
   float4 colorAndDistance;
+  uint2 pixelCoords;
+};
+
+struct IndirectHitInfo
+{
+    float3 color;
+    uint currentDepth;
+    uint2 pixelCoords;
+};
+
+struct MaterialProperties
+{
+    bool isLight;
 };
 
 // Attributes output by the raytracing when hitting a surface,

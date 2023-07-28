@@ -382,8 +382,27 @@
     <CopyFileToFolders Include="Content\GiantBaby_Normal.dds">
       <Filter>Content</Filter>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\head.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\RescaledHead.model">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\HeadLambert.dds">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\HeadNormal.dds" />
+    <CopyFileToFolders Include="Content\GB_4K.DDS">
+      <Filter>Content</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="IndirectShader.hlsl">
+      <Filter>Shaders</Filter>
+    </CopyFileToFolders>
     <CopyFileToFolders Include="ScatterShader.hlsl">
       <Filter>Shaders</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Content\Sand_Normal.DDS">
+      <Filter>Content</Filter>
     </CopyFileToFolders>
   </ItemGroup>
 </Project>

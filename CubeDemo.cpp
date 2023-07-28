@@ -68,6 +68,12 @@ ComPtr<ID3D12RootSignature> CubeDemo::CreateRayGenSignature()
 {
     nv_helpers_dx12::RootSignatureGenerator rsc;
     rsc.AddHeapRangesParameter({ {0, 1, 0, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0}, {0, 1, 0, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1}, {0, 1, 0, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2} });
+    rsc.AddHeapRangesParameter({
+    {1, 1 , 0, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 0}  // CBV for Frame Info.
+    });
+    rsc.AddHeapRangesParameter({
+    {1, 1 , 0, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0}  // CBV for Frame Info.
+        });
 
     return rsc.Generate(Application::Get().GetDevice().Get(), true);
 }
@@ -98,6 +104,14 @@ ComPtr<ID3D12RootSignature> CubeDemo::CreateHitSignature()
     {0, 1 , 0, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 0}  // CBV for Point Light.
     });
 
+    rsc.AddHeapRangesParameter({
+    {1, 1 , 0, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 0}  // CBV for Random Frame.
+    });
+
+    rsc.AddHeapRangesParameter({
+    {0, _gameObjects.size(), 4, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0}  // SRV for Material Properties.
+    });
+
     return rsc.Generate(Application::Get().GetDevice().Get(), true);
 }
 
@@ -118,19 +132,19 @@ void CubeDemo::CreateRayTracingPipeline()
     m_hitLibrary = nv_helpers_dx12::CompileShaderLibrary(L"Hit.hlsl");
     m_missLibrary = nv_helpers_dx12::CompileShaderLibrary(L"Miss.hlsl");
     m_shadowLibrary = nv_helpers_dx12::CompileShaderLibrary(L"ShadowRay.hlsl");
-    m_lightSampleLibrary = nv_helpers_dx12::CompileShaderLibrary(L"ScatterShader.hlsl");
+    m_scatterLibrary = nv_helpers_dx12::CompileShaderLibrary(L"ScatterShader.hlsl");
 
     pipeline.AddLibrary(m_rayGenLibrary.Get(), { L"RayGen" });
     pipeline.AddLibrary(m_hitLibrary.Get(), { L"ClosestHit" });
     pipeline.AddLibrary(m_missLibrary.Get(), { L"Miss" });
     pipeline.AddLibrary(m_shadowLibrary.Get(), { L"ShadowClosestHit" , L"ShadowMiss" });
-    pipeline.AddLibrary(m_lightSampleLibrary.Get(), { L"ScatterClosestHit" , L"ScatterMiss" });
+    pipeline.AddLibrary(m_scatterLibrary.Get(), { L"ScatterClosestHit" , L"ScatterMiss" });
 
     m_rayGenSignature = CreateRayGenSignature();
     m_missSignature = CreateMissSignature();
     m_hitSignature = CreateHitSignature();
     m_shadowSignature = CreateHitSignature();
-    m_lightSampleSignature = CreateHitSignature();
+    m_scatterSignature = CreateHitSignature();
 
     pipeline.AddHitGroup(L"HitGroup", L"ClosestHit");
     pipeline.AddHitGroup(L"ShadowHitGroup", L"ShadowClosestHit");
@@ -138,14 +152,14 @@ void CubeDemo::CreateRayTracingPipeline()
 
     pipeline.AddRootSignatureAssociation(m_rayGenSignature.Get(), { L"RayGen" });
     pipeline.AddRootSignatureAssociation(m_missSignature.Get(), { L"Miss" });
-    pipeline.AddRootSignatureAssociation(m_hitSignature.Get(), { L"HitGroup" });
+    pipeline.AddRootSignatureAssociation(m_hitSignature.Get(), { L"HitGroup"});
     pipeline.AddRootSignatureAssociation(m_shadowSignature.Get(), { L"ShadowHitGroup" });
-    pipeline.AddRootSignatureAssociation(m_lightSampleSignature.Get(), { L"ScatterHitGroup" });
+    pipeline.AddRootSignatureAssociation(m_scatterSignature.Get(), { L"ScatterHitGroup" });
     pipeline.AddRootSignatureAssociation(m_missSignature.Get(), { L"Miss", L"ShadowMiss"});
 
     pipeline.SetMaxPayloadSize(8 * sizeof(float));
     pipeline.SetMaxAttributeSize(2 * sizeof(float));
-    pipeline.SetMaxRecursionDepth(6);
+    pipeline.SetMaxRecursionDepth(7);
 
     m_rtStateObject = pipeline.Generate();
     ThrowIfFailed(m_rtStateObject->QueryInterface(IID_PPV_ARGS(&m_rtStateObjectProps)));
@@ -160,8 +174,8 @@ void CubeDemo::CreateRaytracingOutputBuffer()
     resDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
     resDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     resDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-    resDesc.Width = 1280;
-    resDesc.Height = 720;
+    resDesc.Width = 1920;
+    resDesc.Height = 1080;
     resDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     resDesc.MipLevels = 1;
     resDesc.SampleDesc.Count = 1;
@@ -170,11 +184,29 @@ void CubeDemo::CreateRaytracingOutputBuffer()
 
 }
 
+void CubeDemo::CreateAccumulatedOutputBuffer()
+{
+    auto device = Application::Get().GetDevice().Get();
+
+    D3D12_RESOURCE_DESC resDesc{};
+    resDesc.DepthOrArraySize = 1;
+    resDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    resDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    resDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    resDesc.Width = 1920;
+    resDesc.Height = 1080;
+    resDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+    resDesc.MipLevels = 1;
+    resDesc.SampleDesc.Count = 1;
+
+    ThrowIfFailed(device->CreateCommittedResource(&nv_helpers_dx12::kDefaultHeapProps, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_COPY_SOURCE, nullptr, IID_PPV_ARGS(&m_accumulatedResource)));
+}
+
 void CubeDemo::CreateShaderResourceHeap()
 {
     auto device = Application::Get().GetDevice().Get();
 
-    uint32_t heapCount = 4 + (_gameObjects.size() * (4)); // _gamObjects.size() multiplied by 3 for Texture, Normal Map VertexBuffer, and IndexBuffer.
+    uint32_t heapCount = 6 + (_gameObjects.size() * (5)); // _gamObjects.size() multiplied by 5 for Texture, Normal Map VertexBuffer, IndexBuffer, and Material Properties.
 
     m_srvUavHeap = nv_helpers_dx12::CreateDescriptorHeap(device, heapCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true);
 
@@ -185,6 +217,7 @@ void CubeDemo::CreateShaderResourceHeap()
     device->CreateUnorderedAccessView(m_outputResource.Get(), nullptr, &uavDesc, srvHandle);
 
     srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
 
     //Acceleration Stucture.
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
@@ -206,6 +239,13 @@ void CubeDemo::CreateShaderResourceHeap()
     device->CreateConstantBufferView(&cbvDesc, srvHandle);
     srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
+    cbvDesc.BufferLocation = m_randomFrameNumberBuffer->GetGPUVirtualAddress();
+    cbvDesc.SizeInBytes = 256;
+    device->CreateConstantBufferView(&cbvDesc, srvHandle);
+    srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+    device->CreateUnorderedAccessView(m_accumulatedResource.Get(), nullptr, &uavDesc, srvHandle);
+    srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDescTex = {};
     srvDescTex.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
@@ -254,6 +294,21 @@ void CubeDemo::CreateShaderResourceHeap()
         device->CreateShaderResourceView(object->IndexBuffer().Get(), &indexDesc, srvHandle);
         srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     }
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC materialProperties = {};
+    materialProperties.Format = DXGI_FORMAT_UNKNOWN;
+    materialProperties.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    materialProperties.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    materialProperties.Buffer.FirstElement = 0;
+    materialProperties.Buffer.StructureByteStride = sizeof(MaterialProperties);
+    materialProperties.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+
+    for (auto& object : _gameObjects)
+    {
+        materialProperties.Buffer.NumElements = 1;
+        device->CreateShaderResourceView(object->MaterialPropertiesBuffer().Get(), &materialProperties, srvHandle);
+        srvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    }
 }
 
 void CubeDemo::CreateShaderBindingTable()
@@ -266,8 +321,14 @@ void CubeDemo::CreateShaderBindingTable()
     D3D12_GPU_DESCRIPTOR_HANDLE pointLightSrvHandle = srvUavHeapHandle;
     pointLightSrvHandle.ptr = srvUavHeapHandle.ptr + (UINT{ 3 } *device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 
+    D3D12_GPU_DESCRIPTOR_HANDLE randomFrameSrvHandle = srvUavHeapHandle;
+    randomFrameSrvHandle.ptr = pointLightSrvHandle.ptr + (device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+
+    D3D12_GPU_DESCRIPTOR_HANDLE accumulatedSrvHandle = randomFrameSrvHandle;
+    accumulatedSrvHandle.ptr = randomFrameSrvHandle.ptr + (device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+
     D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle = srvUavHeapHandle;
-    textureSrvHandle.ptr = pointLightSrvHandle.ptr + (device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+    textureSrvHandle.ptr = accumulatedSrvHandle.ptr + (device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 
     D3D12_GPU_DESCRIPTOR_HANDLE vertexSrvHandle = textureSrvHandle;
     vertexSrvHandle.ptr = textureSrvHandle.ptr + ((_gameObjects.size() * 2) * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
@@ -275,18 +336,23 @@ void CubeDemo::CreateShaderBindingTable()
     D3D12_GPU_DESCRIPTOR_HANDLE indexSrvHandle = vertexSrvHandle;
     indexSrvHandle.ptr = vertexSrvHandle.ptr + (_gameObjects.size() * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 
+    D3D12_GPU_DESCRIPTOR_HANDLE materialPropertiesSrvHandle = indexSrvHandle;
+    materialPropertiesSrvHandle.ptr = indexSrvHandle.ptr + (_gameObjects.size() * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 
 
     auto heapPointer = reinterpret_cast<uint64_t*>(srvUavHeapHandle.ptr);
     auto pointLightPointer = reinterpret_cast<uint64_t*>(pointLightSrvHandle.ptr);
+    auto randomFramePointer = reinterpret_cast<uint64_t*>(randomFrameSrvHandle.ptr);
+    auto accumulatedPointer = reinterpret_cast<uint64_t*>(accumulatedSrvHandle.ptr);
     auto texPointer = reinterpret_cast<uint64_t*>(textureSrvHandle.ptr);
     auto vertexPointer = reinterpret_cast<uint64_t*>(vertexSrvHandle.ptr);
     auto indexPointer = reinterpret_cast<uint64_t*>(indexSrvHandle.ptr);
-    m_sbtHelper.AddRayGenerationProgram(L"RayGen", { heapPointer });
+    auto materialProperties = reinterpret_cast<uint64_t*>(materialPropertiesSrvHandle.ptr);
+    m_sbtHelper.AddRayGenerationProgram(L"RayGen", { heapPointer, randomFramePointer, accumulatedPointer });
     m_sbtHelper.AddMissProgram(L"Miss", {});
-    m_sbtHelper.AddHitGroup(L"HitGroup", { {heapPointer, texPointer, vertexPointer, indexPointer, pointLightPointer, nullptr, nullptr, nullptr, nullptr, nullptr}}); // Padding with nullptr as needed.
-    m_sbtHelper.AddHitGroup(L"ShadowHitGroup", { {heapPointer}});
-    m_sbtHelper.AddHitGroup(L"ScatterHitGroup", { {heapPointer, texPointer, vertexPointer, indexPointer, pointLightPointer, nullptr, nullptr, nullptr, nullptr, nullptr}}); // Padding with nullptr as needed.
+    m_sbtHelper.AddHitGroup(L"HitGroup", { {heapPointer, texPointer, vertexPointer, indexPointer, pointLightPointer, randomFramePointer, materialProperties, nullptr, nullptr, nullptr}}); // Padding with nullptr as needed.
+    m_sbtHelper.AddHitGroup(L"ShadowHitGroup", { {heapPointer, texPointer, vertexPointer, indexPointer, pointLightPointer, randomFramePointer, materialProperties, nullptr, nullptr, nullptr}});
+    m_sbtHelper.AddHitGroup(L"ScatterHitGroup", { {heapPointer, texPointer, vertexPointer, indexPointer, pointLightPointer, randomFramePointer, materialProperties, nullptr, nullptr, nullptr} }); // Padding with nullptr as needed.
     m_sbtHelper.AddMissProgram(L"ShadowMiss", { {}});
     m_sbtHelper.AddMissProgram(L"ScatterMiss", { {}});
 
@@ -359,6 +425,8 @@ void CubeDemo::CreatePointLightBuffer()
     m_pointLightBuffer = nv_helpers_dx12::CreateBuffer(device, m_pointLightBufferSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, nv_helpers_dx12::kUploadHeapProps);
     m_pointLightHeap = nv_helpers_dx12::CreateDescriptorHeap(device, 1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true);
 
+    m_pointLightBuffer->SetName(L"Point Light Buffer");
+
     D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc{};
 
     cbvDesc.BufferLocation = m_pointLightBuffer->GetGPUVirtualAddress();
@@ -372,13 +440,59 @@ void CubeDemo::CreatePointLightBuffer()
 void CubeDemo::UpdatePointLightBuffer()
 {
     XMFLOAT3& pointLightPosition = _pointLight->_position;
-    std::vector<float> proxyFloatVector{ pointLightPosition.x, pointLightPosition.y, pointLightPosition.z};
+    XMFLOAT3& pointLightColor = _pointLight->_color;
+    float& pointLightIntensity = _pointLight->_intensity;
+
+    std::vector<float> proxyFloatVector{ pointLightPosition.x, pointLightPosition.y, pointLightPosition.z, 0.0f, pointLightColor.x, pointLightColor.y, pointLightColor.z, pointLightIntensity, pointLightIntensity};
+
+    for (std::size_t index{ 0 }; index < 55; ++index)
+    {
+        proxyFloatVector.push_back(0.0f);
+    }
 
     uint8_t* pData;
     ThrowIfFailed(m_pointLightBuffer->Map(0, nullptr, reinterpret_cast<void**>(&pData)));
     memcpy(pData, proxyFloatVector.data(), m_pointLightBufferSize);
     m_pointLightBuffer->Unmap(0, nullptr);
 }
+
+void CubeDemo::CreateRandomFrameNumberBuffer()
+{
+    auto device = Application::Get().GetDevice().Get();
+
+    m_randomFrameNumberBuffer = nv_helpers_dx12::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, nv_helpers_dx12::kUploadHeapProps);
+    m_randomFrameNumberBufferHeap = nv_helpers_dx12::CreateDescriptorHeap(device, 1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true);
+
+    D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc{};
+
+    cbvDesc.BufferLocation = m_randomFrameNumberBuffer->GetGPUVirtualAddress();
+    cbvDesc.SizeInBytes = 256;
+
+    D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = m_randomFrameNumberBufferHeap->GetCPUDescriptorHandleForHeapStart();
+
+    device->CreateConstantBufferView(&cbvDesc, srvHandle);
+}
+
+void CubeDemo::UpdateRandomFrameNumberBuffer()
+{
+    UINT* framePtr = &FrameNumber;
+    std::byte* bytePtr = reinterpret_cast<std::byte*>(framePtr);
+    std::byte* boolBytePtr = reinterpret_cast<std::byte*>(&_isAccumulatingFrames);
+    std::byte* accBytesPtr = reinterpret_cast<std::byte*>(&_frameAccumulationStarted);
+    std::byte* aaBoolBytesPtr = reinterpret_cast<std::byte*>(&_isSuperSampling);
+    std::vector<std::byte> proxyIntVector{ bytePtr[0], bytePtr[1], bytePtr[2], bytePtr[3], accBytesPtr[0], accBytesPtr[1], accBytesPtr[2], accBytesPtr[3], boolBytePtr[0], std::byte{}, std::byte{}, std::byte{}, aaBoolBytesPtr[0] };
+    sizeof(bool);
+    for (std::size_t index{ 0 }; index < 235; ++index)
+    {
+        proxyIntVector.push_back(std::byte{});
+    }
+
+    uint8_t* pData;
+    ThrowIfFailed(m_randomFrameNumberBuffer->Map(0, nullptr, reinterpret_cast<void**>(&pData)));
+    memcpy(pData, proxyIntVector.data(), 256);
+    m_randomFrameNumberBuffer->Unmap(0, nullptr);
+}
+
 
 CubeDemo::CubeDemo(const std::wstring& name, int width, int height, bool vSync) :
     super{ name, width, height, vSync },
@@ -435,21 +549,39 @@ bool CubeDemo::LoadContent()
     _camera->SetPosition(-125, 100, -500);
 
     _pointLight = std::make_shared<PointLight>();
-    _pointLight->SetPosition(0.0f, 0.0f, -1500.0f);
+    _pointLight->SetPosition(88.4f, 111.4f, -556.5f);
 
     auto device = Application::Get().GetDevice();
     auto commandQueue = Application::Get().GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
     auto commandList = commandQueue->GetCommandList();
 
     _gameObjects = {
-        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/GB_TextureDownRes.dds", L"Content/GiantBaby_Normal.dds", _contentManager, 0, L"GB Body")},
-        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/GB_TextureDownRes.dds", L"Content/GiantBaby_Normal.dds", _contentManager, 1, L"GB Body")},
-        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/GB_TextureDownRes.dds", L"Content/GiantBaby_Normal.dds", _contentManager, 2, L"GB Body")},
+        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/GB_4K.DDS", L"Content/GiantBaby_Normal.dds", _contentManager, 0, L"GB Body")},
+        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/GB_4K.DDS", L"Content/GiantBaby_Normal.dds", _contentManager, 1, L"GB Body")},
+        { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/GB_4K.DDS", L"Content/GiantBaby_Normal.dds", _contentManager, 2, L"GB Body")},
         { std::make_shared<GameObject>(L"GBFinalPlaced.model", L"Content/NeptuneColorMap.dds", L"Content/GiantBaby_Normal.dds", _contentManager, 3, L"GB Eyes")},
         { std::make_shared<GameObject>(L"BusterSwordFinalPlaced.model", L"Content/BusterSword_ColorMap.dds", L"Content/BusterSword_Normal.dds", _contentManager, 0, L"Buster Sword")},
         { std::make_shared<GameObject>(L"BasaltColumnsFinalPlaced.model", L"Content/BasaltColumnColorMap.DDS", L"Content/Basalt_Normal.dds", _contentManager, 0, L"Basalt Columns")},
-        { std::make_shared<GameObject>(L"SandFinalPlaced.model", L"Content/SandColorMap.DDS", L"Content/Basalt_Normal.dds", _contentManager, 0, L"Sand")},
+        { std::make_shared<GameObject>(L"SandFinalPlaced.model", L"Content/SandColorMap.DDS", L"Content/Sand_Normal.DDS", _contentManager, 0, L"Sand")},
     };
+
+    //for (auto& object : _gameObjects)
+    //{
+    //    object->GetMaterialProperties().isLight = false;
+    //}
+
+    _lightProxy = new GameObject{L"Sphere.obj.bin",L"Content/NeptuneColorMap.dds", L"Content/GiantBaby_Normal.dds", _contentManager, 0, L"Proxy"};
+    _lightProxy->GetMaterialProperties().isLight = true;
+
+    _gameObjects.emplace_back(_lightProxy);
+
+    _lightProxy->UpdatePosition(0.0f, 0.0f, -1500.0f);
+    //_gameObjects.reserve(296);
+
+    //for (std::size_t i{ 0 }; i < 296; ++i)
+    //{
+    //    _gameObjects.emplace_back(std::make_shared<GameObject>(L"RescaledHead.model", L"Content/HeadLambert.dds", L"Content/HeadNormal.dds", _contentManager, i, L"GB Body"));
+    //}
 
     for (auto& object : _gameObjects)
     {
@@ -609,7 +741,7 @@ bool CubeDemo::LoadContent()
     for (auto& object : _gameObjects)
     {
         bottomLevelBuffers.emplace_back(CreateBottomLevelAS({ { object->VertexBuffer().Get(), object->VertCount() } }, { {object->IndexBuffer().Get(), object->IndexCount()} }, commandList.Get()));
-        m_bottomLevelASInstances.push_back({ bottomLevelBuffers[bottomLevelBuffers.size() - 1].result, XMMatrixIdentity()});
+        m_bottomLevelASInstances.push_back({ bottomLevelBuffers[bottomLevelBuffers.size() - 1].result, object->WorldMatrix()});
     }
 
     CreateTopLevelAS(m_bottomLevelASInstances, commandList.Get());
@@ -619,13 +751,15 @@ bool CubeDemo::LoadContent()
 
     CreateRayTracingPipeline();
     CreateRaytracingOutputBuffer();
+    CreateAccumulatedOutputBuffer();
     CreateCameraBuffer();
     CreatePointLightBuffer();
+    CreateRandomFrameNumberBuffer();
     CreateShaderResourceHeap();
     CreateShaderBindingTable();
 
     _contentLoaded = true;
-    ResizeDepthBuffer(1280, 720);
+    ResizeDepthBuffer(1920, 1080);
 
     return true;
 }
@@ -645,12 +779,16 @@ void CubeDemo::OnUpdate(UpdateEventArgs& args)
     static uint64_t frameCount = 0;
     static double totalTime = 0.0;
 
+    ++FrameNumber;
+
     super::OnUpdate(args);
     _camera->CheckForInput(cameraKeyArgument, cameraMouseArgument, args);
     _camera->Update(args);
 
     _pointLight->CheckForInput(pointLightArgument, cameraMouseArgument, args);
     _pointLight->Update(args);
+    auto& lightPos = _pointLight->_position;
+    _lightProxy->UpdatePosition(lightPos.x, lightPos.y, lightPos.z);
 
     UpdateCameraBuffer();
 
@@ -658,6 +796,8 @@ void CubeDemo::OnUpdate(UpdateEventArgs& args)
     {
         UpdatePointLightBuffer();
     }
+
+    UpdateRandomFrameNumberBuffer();
 
     totalTime += args.ElapsedTime;
     frameCount++;
@@ -674,10 +814,28 @@ void CubeDemo::OnUpdate(UpdateEventArgs& args)
         totalTime = 0.0;
     }
 
+    std::vector<XMMATRIX> updatedMatrices;
+
     for (auto& object : _gameObjects)
     {
         object->UpdateObject();
+        updatedMatrices.push_back(object->WorldMatrix());
     }
+
+    std::size_t index{ 0 };
+    for (auto& object : m_bottomLevelASInstances)
+    {
+        object.transformation = updatedMatrices[index];
+        ++index;
+    }
+
+    auto commandQueue = Application::Get().GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
+    auto commandList = commandQueue->GetCommandList();
+
+    CreateTopLevelAS(m_bottomLevelASInstances, commandList.Get(), true);
+
+    auto initFenceValue = commandQueue->ExecuteCommandList(commandList);
+    commandQueue->WaitForFenceValue(initFenceValue);
 }
 
 void CubeDemo::OnRender(RenderEventArgs& args)
@@ -701,25 +859,35 @@ void CubeDemo::OnRender(RenderEventArgs& args)
     {
         static float f = 0.0f;
         static int counter = 0;
+        static bool raytracing = true;
+        static bool temporalAccumulation = false;
+        static bool antiAliasing = false;
 
         ImGui::Begin("DXR Scene");
 
-        if (_isRaster)
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        //ImGui::Checkbox("Raytracing", &raytracing);
+        //_isRaster = !raytracing;
+
+        ImGui::Checkbox("Temporal Accumulation", &temporalAccumulation);
+
+        if (temporalAccumulation != _isAccumulatingFrames)
         {
-            ImGui::Text("Raytracing Off : Spacebar to Toggle");
+            _frameAccumulationStarted = FrameNumber;
         }
-        else
-        {
-            ImGui::Text("Raytracing On : Spacebar to Toggle");
-        }
+        _isAccumulatingFrames = temporalAccumulation;
+
+        ImGui::Checkbox("4x Super Sampling", &antiAliasing);
+        _isSuperSampling = antiAliasing;
 
         ImGui::Text("Move Camera Forward/Backward : WASD EQ");
         ImGui::Text("Camera Look : Click and Drag");
         ImGui::Text("Camera Reset Orientation : Tab");
         ImGui::Text("Light Position : X: %.1f , Y: %.1f , Z: %.1f", pointLightPosition.x, pointLightPosition.y, pointLightPosition.z);
+        ImGui::DragFloat("Light Scale", _lightProxy->Scale(), 0.5f, 1.0f, 70.0f, "%.3f");
+        ImGui::DragFloat("Light Intensity", &_pointLight->_intensity, 0.1f, 1.0f, 50.0f, "%.3f");
+        ImGui::ColorEdit4("Light Color", (float*)&_pointLight->_color);
 
-
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::End();
     }
 
@@ -853,11 +1021,13 @@ void CubeDemo::OnKeyPressed(KeyEventArgs& args)
             pointLightArgument.emplace_back(args.Key);
         }
         break;
-    case KeyCode::Tab:
-        _camera->ResetOrientation();
+    //case KeyCode::Tab:
+    //    _camera->ResetOrientation();
+    //    break;
+    case KeyCode::T:
+        _isAccumulatingFrames = !_isAccumulatingFrames;
+        _frameAccumulationStarted = FrameNumber;
         break;
-    case KeyCode::Space:
-        _isRaster = !_isRaster;
     default:
         break;
     }
@@ -952,24 +1122,27 @@ CubeDemo::AccelerationStructureBuffers CubeDemo::CreateBottomLevelAS(std::vector
     return buffers;
 }
 
-void CubeDemo::CreateTopLevelAS(const std::vector<BottomLevelASInstance>& instances, ID3D12GraphicsCommandList4* commandList)
+void CubeDemo::CreateTopLevelAS(const std::vector<BottomLevelASInstance>& instances, ID3D12GraphicsCommandList4* commandList, bool updateOnly)
 {
-    for (std::size_t i{0}; i < instances.size(); i++)
+    if (!updateOnly)
     {
-        m_topLevelASGenerator.AddInstance(instances[i].bottomLevelAS.Get(), instances[i].transformation, static_cast<UINT>(i), static_cast<UINT>(0));
+        for (std::size_t i{0}; i < instances.size(); i++)
+        {
+            m_topLevelASGenerator.AddInstance(instances[i].bottomLevelAS.Get(), instances[i].transformation, static_cast<UINT>(i), static_cast<UINT>(0));
+        }
+
+        auto device = Application::Get().GetDevice().Get();
+
+        UINT64 scratchSize;
+        UINT64 resultSize;
+        UINT64 descsSize;
+
+        m_topLevelASGenerator.ComputeASBufferSizes(device, false, &scratchSize, &resultSize, &descsSize);
+
+        m_topLevelASBuffers.scratch = nv_helpers_dx12::CreateBuffer(device, scratchSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nv_helpers_dx12::kDefaultHeapProps);
+        m_topLevelASBuffers.result = nv_helpers_dx12::CreateBuffer(device, resultSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, nv_helpers_dx12::kDefaultHeapProps);
+        m_topLevelASBuffers.descriptors = nv_helpers_dx12::CreateBuffer(device, descsSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, nv_helpers_dx12::kUploadHeapProps);
     }
-
-    auto device = Application::Get().GetDevice().Get();
-
-    UINT64 scratchSize;
-    UINT64 resultSize;
-    UINT64 descsSize;
-
-    m_topLevelASGenerator.ComputeASBufferSizes(device, false, &scratchSize, &resultSize, &descsSize);
-
-    m_topLevelASBuffers.scratch = nv_helpers_dx12::CreateBuffer(device, scratchSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nv_helpers_dx12::kDefaultHeapProps);
-    m_topLevelASBuffers.result = nv_helpers_dx12::CreateBuffer(device, resultSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, nv_helpers_dx12::kDefaultHeapProps);
-    m_topLevelASBuffers.descriptors = nv_helpers_dx12::CreateBuffer(device, descsSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, nv_helpers_dx12::kUploadHeapProps);
 
     m_topLevelASGenerator.Generate(commandList, m_topLevelASBuffers.scratch.Get(), m_topLevelASBuffers.result.Get(), m_topLevelASBuffers.descriptors.Get());
 }
@@ -1018,7 +1191,7 @@ void CubeDemo::ResizeDepthBuffer(int width, int height)
 
 void CubeDemo::OnResize(ResizeEventArgs& args)
 {
-    if (args.Width != 1280 || args.Height != 720)
+    if (args.Width != 1920 || args.Height != 1080)
     {
         super::OnResize(args);
 
@@ -1048,7 +1221,7 @@ void CubeDemo::OnMouseMoved(MouseMotionEventArgs& args)
 
 void CubeDemo::OnMouseButtonPressed(MouseButtonEventArgs& args)
 {
-    if (args.LeftButton)
+    if (args.RightButton)
     {
         SetCapture(_window->GetWindowHandle());
         _camera->SetIsAcceptingMouseMovementInputs(true);
@@ -1059,7 +1232,7 @@ void CubeDemo::OnMouseButtonPressed(MouseButtonEventArgs& args)
 
 void CubeDemo::OnMouseButtonReleased(MouseButtonEventArgs& args)
 {
-    if (!args.LeftButton)
+    if (!args.RightButton)
     {
         _camera->SetIsAcceptingMouseMovementInputs(false);
         ReleaseCapture();

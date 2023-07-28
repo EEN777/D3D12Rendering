@@ -1,6 +1,10 @@
+#pragma once    
 #include "pch.h"
 #include "Application.h"
 #include "resource.h"
+#include "imgui.h"
+#include "imgui_impl_dx12.h"
+#include "imgui_impl_win32.h"
 
 #include "Game.h"
 #include "CommandQueue.h"
@@ -413,6 +417,11 @@ MouseButtonEventArgs::MouseButton DecodeMouseButton(UINT messageID)
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    extern IMGUI_IMPL_API LRESULT
+        ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    if (ImGui_ImplWin32_WndProcHandler(hwnd, message, wParam, lParam))
+        return true;
+
     WindowPtr pWindow;
     {
         WindowMap::iterator iter = gs_Windows.find(hwnd);

@@ -29,8 +29,7 @@ class CubeDemo : public Game
 	D3D12_RECT _scissorRect;
 
 	std::vector<std::shared_ptr<GameObject>> _gameObjects;
-	std::shared_ptr<GameObject> gameObject;
-	std::shared_ptr<GameObject> gameObject2;
+	GameObject* _lightProxy;
 
 	float _fieldOfView;
 
@@ -39,7 +38,11 @@ class CubeDemo : public Game
 	DirectX::XMMATRIX _projectionMatrix;
 
 	bool _contentLoaded{ false };
-	bool _isRaster{ true };
+	bool _isRaster{ false };
+	bool _isAccumulatingFrames{ false };
+	bool _isSuperSampling{ false };
+
+	UINT _frameAccumulationStarted{ 0 };
 
 	struct AccelerationStructureBuffers
 	{
@@ -68,12 +71,12 @@ class CubeDemo : public Game
 	ComPtr<IDxcBlob> m_hitLibrary;
 	ComPtr<IDxcBlob> m_missLibrary;
 	ComPtr<IDxcBlob> m_shadowLibrary;
-	ComPtr<IDxcBlob> m_lightSampleLibrary;
+	ComPtr<IDxcBlob> m_scatterLibrary;
 	ComPtr<ID3D12RootSignature> m_rayGenSignature;
 	ComPtr<ID3D12RootSignature> m_hitSignature;
 	ComPtr<ID3D12RootSignature> m_missSignature;
 	ComPtr<ID3D12RootSignature> m_shadowSignature;
-	ComPtr<ID3D12RootSignature> m_lightSampleSignature;
+	ComPtr<ID3D12RootSignature> m_scatterSignature;
 	ComPtr<ID3D12StateObject> m_rtStateObject;
 	ComPtr<ID3D12StateObjectProperties> m_rtStateObjectProps;
 
@@ -81,6 +84,8 @@ class CubeDemo : public Game
 	void CreateShaderResourceHeap();
 	ComPtr<ID3D12Resource> m_outputResource;
 	ComPtr<ID3D12DescriptorHeap> m_srvUavHeap;
+	void CreateAccumulatedOutputBuffer();
+	ComPtr<ID3D12Resource> m_accumulatedResource;
 
 	void CreateShaderBindingTable();
 	nv_helpers_dx12::ShaderBindingTableGenerator m_sbtHelper;
@@ -98,6 +103,11 @@ class CubeDemo : public Game
 	ComPtr<ID3D12DescriptorHeap> m_pointLightHeap;
 	uint32_t m_pointLightBufferSize = 0;
 
+	void CreateRandomFrameNumberBuffer();
+	void UpdateRandomFrameNumberBuffer();
+	ComPtr<ID3D12Resource> m_randomFrameNumberBuffer;
+	ComPtr<ID3D12DescriptorHeap> m_randomFrameNumberBufferHeap;
+
 	Library::ContentManager _contentManager{};
 
 	//temp
@@ -107,6 +117,8 @@ class CubeDemo : public Game
 	ComPtr<ID3D12DescriptorHeap> _texDescriptorHeap;
 
 	TextureLoader::TextureLoader _textureLoader{};
+
+	UINT FrameNumber{ 0 };
 
 public:
 
@@ -162,7 +174,7 @@ private:
 
 	AccelerationStructureBuffers CreateBottomLevelAS(std::vector<std::pair<ComPtr<ID3D12Resource>, uint32_t>> vVertexBuffers, std::vector<std::pair<ComPtr<ID3D12Resource>, uint32_t>> vIndexBuffers, ID3D12GraphicsCommandList4* commandList);
 
-	void CreateTopLevelAS(const std::vector<BottomLevelASInstance>& instances, ID3D12GraphicsCommandList4* commandList);
+	void CreateTopLevelAS(const std::vector<BottomLevelASInstance>& instances, ID3D12GraphicsCommandList4* commandList, bool updateOnly = false);
 
 	void CreateAccelerationStructures(ID3D12GraphicsCommandList4* commandList);
 

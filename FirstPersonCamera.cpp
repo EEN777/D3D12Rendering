@@ -126,6 +126,7 @@ void FirstPersonCamera::CheckForInput(std::vector<KeyCode::Key>& keys, std::pair
         }
         else if (prevPair != mouse)
         {
+
             rotationAmount.x = -mouse.first * _mouseSensitivity;
             rotationAmount.y = mouse.second * _mouseSensitivity;
             positionChanged = true;
@@ -147,7 +148,7 @@ void FirstPersonCamera::UpdatePosition(const DirectX::XMFLOAT3& movementAmount, 
     XMVECTOR up = XMLoadFloat3(&_up);
 
     XMMATRIX pitchMatrix = XMMatrixRotationAxis(right, XMVectorGetY(rotationVector));
-    XMMATRIX yawMatrix = XMMatrixRotationY(XMVectorGetX(rotationVector));
+    XMMATRIX yawMatrix = XMMatrixRotationAxis(up, XMVectorGetX(rotationVector));
 
     ApplyRotation(XMMatrixMultiply(pitchMatrix, yawMatrix));
 
