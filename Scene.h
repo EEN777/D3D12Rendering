@@ -11,7 +11,7 @@
 #include "nv_helpers_dx12/ShaderBindingTableGenerator.h"
 #include "PointLight.h"
 
-class CubeDemo : public Game
+class Scene : public Game
 {
 	uint64_t _fenceValues[Window::BufferCount]{};
 
@@ -142,7 +142,7 @@ public:
 	std::vector<KeyCode::Key> pointLightArgument;
 
 
-	CubeDemo(const std::wstring& name, int width, int height, bool vSync = false);
+	Scene(const std::wstring& name, int width, int height, bool vSync = false);
 	virtual bool LoadContent() override;
 	virtual bool UnloadContent() override;
 

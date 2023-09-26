@@ -15,8 +15,8 @@
     <ClCompile Include="StreamHelper.cpp">
       <Filter>Helpers</Filter>
     </ClCompile>
-    <ClCompile Include="CubeDemo.cpp">
-      <Filter>CubeDemo</Filter>
+    <ClCompile Include="Scene.cpp">
+      <Filter>Scene</Filter>
     </ClCompile>
     <ClCompile Include="ContentManager.cpp">
       <Filter>Utility\ContentManager</Filter>
@@ -127,8 +127,8 @@
     <ClInclude Include="StreamHelper.h">
       <Filter>Helpers</Filter>
     </ClInclude>
-    <ClInclude Include="CubeDemo.h">
-      <Filter>CubeDemo</Filter>
+    <ClInclude Include="Scene.h">
+      <Filter>Scene</Filter>
     </ClInclude>
     <ClInclude Include="CommonStructures.h">
       <Filter>Helpers</Filter>
@@ -295,7 +295,7 @@
     <Filter Include="Lights">
       <UniqueIdentifier>{42689551-e246-417a-b138-3b2645087b73}</UniqueIdentifier>
     </Filter>
-    <Filter Include="CubeDemo">
+    <Filter Include="Scene">
       <UniqueIdentifier>{d935544b-256c-480b-8231-ae99fbc3234b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>

@@ -4,7 +4,7 @@
 #include <Shlwapi.h>
 
 #include "Application.h"
-#include "CubeDemo.h"
+#include "Scene.h"
 
 #include "imgui.h"
 #include "imgui_impl_win32.h"
@@ -41,7 +41,7 @@ int CALLBACK wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR lpCmdL
 
     Application::Create(hInstance);
     {
-        std::shared_ptr<CubeDemo> demo = std::make_shared<CubeDemo>(L"DXR Scene", 1920, 1080);
+        std::shared_ptr<Scene> demo = std::make_shared<Scene>(L"DXR Scene", 1920, 1080);
         retCode = Application::Get().Run(demo);
     }
     Application::Destroy();

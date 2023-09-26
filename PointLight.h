@@ -8,7 +8,7 @@
 
 class PointLight final
 {
-	friend class CubeDemo;
+	friend class Scene;
 
 	DirectX::XMFLOAT3 _color{1.0f, 1.0f, 1.0f};
 	DirectX::XMFLOAT3 _position{Library::Vector3Helper::Zero};

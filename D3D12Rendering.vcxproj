@@ -149,7 +149,7 @@
     <ClCompile Include="ContentManager.cpp" />
     <ClCompile Include="ContentTypeReader.cpp" />
     <ClCompile Include="ContentTypeReaderManager.cpp" />
-    <ClCompile Include="CubeDemo.cpp" />
+    <ClCompile Include="Scene.cpp" />
     <ClCompile Include="DDSTextureLoader.cpp" />
     <ClCompile Include="FirstPersonCamera.cpp" />
     <ClCompile Include="Game.cpp" />
@@ -191,7 +191,7 @@
     <ClInclude Include="ContentManager.h" />
     <ClInclude Include="ContentTypeReader.h" />
     <ClInclude Include="ContentTypeReaderManager.h" />
-    <ClInclude Include="CubeDemo.h" />
+    <ClInclude Include="Scene.h" />
     <ClInclude Include="DDSTextureLoader.h" />
     <ClInclude Include="Defines.h" />
     <ClInclude Include="DXRHelper.h" />
