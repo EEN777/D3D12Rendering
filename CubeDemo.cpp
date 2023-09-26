@@ -866,8 +866,8 @@ void CubeDemo::OnRender(RenderEventArgs& args)
         ImGui::Begin("DXR Scene");
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        //ImGui::Checkbox("Raytracing", &raytracing);
-        //_isRaster = !raytracing;
+        ImGui::Checkbox("Raytracing", &raytracing);
+        _isRaster = !raytracing;
 
         ImGui::Checkbox("Temporal Accumulation", &temporalAccumulation);
 

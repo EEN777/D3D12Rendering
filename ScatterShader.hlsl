@@ -71,7 +71,7 @@ void ScatterClosestHit(inout ScatterHitInfo payload, Attributes attrib)
     
     if (currentMaterialProperties.isLight == true)
     {
-        payload.cumulativeColor += lightColor;
+        payload.cumulativeColor += lightColor * lightIntensity;
         payload.hasHitLight = true;
     }
     else if (payload.currentDepth <= payload.maxDepth)
